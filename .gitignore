@@ -33,3 +33,9 @@ fider.sql
 
 # Air live reload temporary files
 tmp/
+
+# Frontend build artifacts
+dist/
+node_modules/
+ssr.js
+locale/*/client.js
