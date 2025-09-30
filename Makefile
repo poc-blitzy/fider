@@ -19,13 +19,10 @@ migrate: ## Run all database migrations
 
 ##@ Building
 
-build: build-server build-ssr build-ui ## Build server and ui
+build: build-server build-ssr ## Build server and SSR
 
 build-server: ## Build server
 	go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
-
-build-ui: ## Build all UI assets
-	NODE_ENV=production npx webpack-cli
 
 build-ssr: ## Build SSR script and locales
 	npx lingui extract public/
@@ -36,14 +33,11 @@ build-ssr: ## Build SSR script and locales
 
 ##@ Testing
 
-test: test-server test-ui ## Test server and ui code
+test: test-server ## Run server tests
 
 test-server: build-server build-ssr ## Run all server tests
 	godotenv -f .test.env ./fider migrate
 	godotenv -f .test.env go test ./... -race
-
-test-ui: ## Run all UI tests
-	TZ=GMT npx jest ./public
 
 coverage-server: build-server build-ssr ## Run all server tests (with code coverage)
 	godotenv -f .test.env ./fider migrate
@@ -56,33 +50,23 @@ coverage-server: build-server build-ssr ## Run all server tests (with code cover
 test-e2e-server: ## Run all E2E tests
 	npx cucumber-js e2e/features/server/**/*.feature --require-module ts-node/register --require 'e2e/**/*.ts' --publish-quiet
 
-test-e2e-ui: ## Run all E2E tests
-	npx cucumber-js e2e/features/ui/**/*.feature --require-module ts-node/register --require 'e2e/**/*.ts' --publish-quiet
-
 
 
 ##@ Running (Watch Mode)
 
-watch:
-	make -j4 watch-server watch-ui
+watch: watch-server ## Run server in watch mode
 
 watch-server: migrate ## Build and run server in watch mode
 	air -c air.conf
-
-watch-ui: ## Build and run server in watch mode
-	npx webpack-cli -w
 
 
 
 ##@ Linting
 
-lint: lint-server lint-ui ## Lint server and ui
+lint: lint-server ## Lint server code
 
 lint-server: ## Lint server code
 	golangci-lint run --timeout 3m
-
-lint-ui: ## Lint ui code
-	npx eslint .
 
 
 
