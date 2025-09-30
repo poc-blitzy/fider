@@ -1,27 +1,35 @@
+# Backend data and temporary files
 data/
 tmp/
-dist/
 output/
-node_modules/
+logs/
+
+# IDE settings
 .vscode/
 .idea/
-logs/
-locale/**/*.js
 
+# Go build artifacts
 fider
 fider.exe
-ssr.js
-.env
-npm-debug.log
+vendor/
 
+# Environment and credentials
+.env
+gcloud-key.json
+etc/*.pem
+
+# Go testing and debugging
 profile.out
 debug
 debug.test
-.DS_Store
 cover.out
-gcloud-key.json
-coverage.tmp
-tsconfig.tsbuildinfo
-etc/*.pem
+
+# macOS metadata
+.DS_Store
+
+# Database exports
 fider_schema.sql
 fider.sql
+
+# Air live reload temporary files
+tmp/
