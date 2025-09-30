@@ -19,15 +19,10 @@ migrate: ## Run all database migrations
 
 ##@ Building
 
-build: build-server build-ssr ## Build server and SSR
+build: build-server ## Build server
 
 build-server: ## Build server
 	go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
-
-build-ssr: ## Build SSR script and locales
-	npx lingui extract public/
-	npx lingui compile
-	NODE_ENV=production node esbuild.config.js
 
 
 
@@ -35,11 +30,11 @@ build-ssr: ## Build SSR script and locales
 
 test: test-server ## Run server tests
 
-test-server: build-server build-ssr ## Run all server tests
+test-server: build-server ## Run all server tests
 	godotenv -f .test.env ./fider migrate
 	godotenv -f .test.env go test ./... -race
 
-coverage-server: build-server build-ssr ## Run all server tests (with code coverage)
+coverage-server: build-server ## Run all server tests (with code coverage)
 	godotenv -f .test.env ./fider migrate
 	godotenv -f .test.env go test ./... -coverprofile=cover.out -coverpkg=all -p=8 -race
 
