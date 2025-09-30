@@ -1,9 +1,56 @@
-node_modules
-tests
-data
-output
+# Git metadata
 .git
-cover.out
-scripts
+.gitignore
+
+# Frontend source code (moved to fider-frontend repository)
+public/
+
+# Frontend build artifacts
+node_modules/
+dist/
+ssr.js
+
+# Frontend build configurations
+package.json
+package-lock.json
+webpack.config.js
+esbuild.config.js
+esbuild-shim.js
+tsconfig.json
+index.d.ts
+lingui.config.js
+.nvmrc
+
+# Frontend code quality tools
+.eslintrc.js
+.eslintignore
+.prettierrc
+.babelrc
+
+# Development tooling
+.github/
+scripts/
+air.conf
+
+# Environment files (configured at runtime)
 .env
-dist
+.test.env
+
+# Test artifacts and coverage
+tests/
+cover.out
+e2e/
+
+# Build outputs and temporary files
+data/
+output/
+fider
+
+# CI/CD and documentation (not needed in runtime container)
+*.md
+!README.md
+
+# Docker-related files (avoid recursion)
+Dockerfile
+docker-compose.yml
+.dockerignore
