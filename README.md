@@ -321,7 +321,7 @@ curl http://localhost:8080/api/v1/posts \
 make migrate
 
 # Or use the migrate command directly
-go run main.go migrate
+go run cmd/main.go migrate
 ```
 
 ## Migration Files
@@ -396,7 +396,8 @@ fider-backend/
 ├── docker-compose.yml        # Local development services
 ├── Dockerfile                # Production container build
 ├── Makefile                  # Build automation
-└── main.go                   # Application entry point
+└── cmd/
+    └── main.go               # Application entry point
 ```
 
 ## Development Workflow

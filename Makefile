@@ -22,7 +22,7 @@ migrate: ## Run all database migrations
 build: build-server build-ssr build-ui ## Build server and ui
 
 build-server: ## Build server
-	go build -ldflags '-s -w $(LDFLAGS)' -o fider .
+	go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
 
 build-ui: ## Build all UI assets
 	NODE_ENV=production npx webpack-cli

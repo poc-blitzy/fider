@@ -758,7 +758,7 @@ cp .example.env .env
 go mod download
 
 # Run migrations
-go run main.go migrate
+go run cmd/main.go migrate
 ```
 
 #### 5. Start Backend Server
@@ -768,7 +768,7 @@ go run main.go migrate
 air
 
 # Or standard Go run
-go run main.go serve
+go run cmd/main.go serve
 ```
 
 Backend API available at `http://localhost:8080`.
