@@ -8,6 +8,11 @@ let browser: playwright.Browser
 let tenantName: string
 type BrowserName = "chromium" | "firefox" | "webkit"
 
+// Initialize URLs from environment variables with fallbacks to dev.fider.io patterns
+// These URLs support cross-origin testing between separated frontend and backend
+const frontendUrl = process.env.FRONTEND_URL || "https://login.dev.fider.io:3000"
+const backendUrl = process.env.BACKEND_URL || "https://login.dev.fider.io:3000"
+
 BeforeAll({ timeout: 30 * 1000 }, async function () {
   const name = (process.env.BROWSER || "chromium") as BrowserName
   browser = await playwright[name].launch({
@@ -35,6 +40,14 @@ Before(async function (this: FiderWorld) {
   this.page = await context.newPage()
   this.tenantName = tenantName
   this.log = debug("e2e")
+  
+  // Initialize URLs for cross-origin testing
+  this.frontendUrl = frontendUrl
+  this.backendUrl = backendUrl
+  
+  // Initialize JWT tokens (will be set by auth steps)
+  this.accessToken = null
+  this.refreshToken = null
 })
 
 After(async function (this: FiderWorld) {
@@ -50,7 +63,7 @@ async function createNewSite() {
 
   const adminEmail = `admin-${tenantName}@fider.io`
   //Create site
-  await page.goto("https://login.dev.fider.io:3000/signup")
+  await page.goto(`${frontendUrl}/signup`)
   await page.type("#input-name", "admin")
   await page.type("#input-email", adminEmail)
   await page.type("#input-tenantName", tenantName)
