@@ -8,6 +8,7 @@ export interface FiderWorld extends CucumberWorld {
   // Cross-origin testing properties for separated frontend/backend repositories
   frontendUrl?: string
   backendUrl?: string
-  accessToken?: string
-  refreshToken?: string
+  // JWT authentication tokens (null = not authenticated, string = valid token)
+  accessToken?: string | null
+  refreshToken?: string | null
 }

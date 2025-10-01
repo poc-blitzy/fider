@@ -14,7 +14,8 @@
     "noUnusedLocals": true,
     "paths": {
       "@fider/*": ["./public/*"],
-      "@locale/*": ["./locale/*"]
+      "@locale/*": ["./locale/*"],
+      "e2e/*": ["./e2e/*"]
     }
   },
   "include": ["./public/**/*", "./locale/**/*", "index.d.ts", "./e2e/**/*"]
