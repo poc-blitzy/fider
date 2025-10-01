@@ -24,6 +24,12 @@ build: build-server ## Build server
 build-server: ## Build server
 	go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
 
+build-ssr: ## Build server-side rendering bundle
+	NODE_ENV=production node esbuild.config.js
+
+build-ui: ## Build frontend UI assets
+	NODE_ENV=production npx webpack
+
 
 
 ##@ Testing
