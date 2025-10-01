@@ -10,15 +10,28 @@ let response: Response
 let responseBody: string
 
 const getFullUrl = (world: FiderWorld, url: string): string => {
-  return url.startsWith("/") ? `https://${world.tenantName}.dev.fider.io:3000${url}` : url
+  // Use configurable backend URL from world context for cross-origin testing
+  return url.startsWith("/") ? `${world.backendUrl}${url}` : url
 }
 
 Given("I prepare a {string} request to {string}", async function (this: FiderWorld, method: string, url: string) {
   requestUrl = getFullUrl(this, url)
   requestHeaders = new Headers()
+  
+  // Automatically include Bearer token authentication if access token is available
+  if (this.accessToken) {
+    requestHeaders.set("Authorization", `Bearer ${this.accessToken}`)
+  }
+  
+  // Include X-Tenant-ID header for tenant context in cross-origin requests
+  if (this.tenantName) {
+    requestHeaders.set("X-Tenant-ID", this.tenantName)
+  }
+  
   requestOpts = {
     method,
     headers: {},
+    credentials: 'include', // Enable cookies for refresh token support in cross-origin requests
   }
 })
 
@@ -27,12 +40,33 @@ Given("I set the {string} header to {string}", async function (headerName: strin
 })
 
 Given("I send a {string} request to {string}", async function (this: FiderWorld, method: string, url: string) {
-  response = await fetch(getFullUrl(this, url), { method })
+  const headers = new Headers()
+  
+  // Automatically include Bearer token authentication if access token is available
+  if (this.accessToken) {
+    headers.set("Authorization", `Bearer ${this.accessToken}`)
+  }
+  
+  // Include X-Tenant-ID header for tenant context in cross-origin requests
+  if (this.tenantName) {
+    headers.set("X-Tenant-ID", this.tenantName)
+  }
+  
+  response = await fetch(getFullUrl(this, url), {
+    method,
+    headers,
+    credentials: 'include', // Enable cookies for refresh token support in cross-origin requests
+  })
   responseBody = await response.text()
 })
 
 When("I send the request", async function () {
-  response = await fetch(requestUrl, { ...requestOpts, headers: requestHeaders })
+  // Merge requestHeaders with requestOpts, ensuring credentials is set for cross-origin support
+  response = await fetch(requestUrl, {
+    ...requestOpts,
+    headers: requestHeaders,
+    credentials: requestOpts.credentials || 'include', // Ensure credentials are included
+  })
   responseBody = await response.text()
 })
 
