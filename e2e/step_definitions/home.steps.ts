@@ -4,7 +4,7 @@ import expect from "expect"
 import { getLatestLinkSentTo } from "./fns"
 
 Given("I go to the home page", async function (this: FiderWorld) {
-  await this.page.goto(`https://${this.tenantName}.dev.fider.io:3000/`)
+  await this.page.goto(this.frontendUrl)
 })
 
 Then("I should be on the home page", async function (this: FiderWorld) {
