@@ -79,7 +79,13 @@ func User() web.MiddlewareFunc {
 						}
 						user = userByClaimsID.Result
 					} else {
-						// JWT decode failed - try as API key
+						// JWT decode failed - check if it looks like a JWT
+						// JWTs have format: header.payload.signature (2 dots)
+						if strings.Count(bearerToken, ".") == 2 {
+							// Token looks like JWT but decode failed - return 401
+							return c.Unauthorized()
+						}
+						// Not JWT format - try as API key
 						getUserByAPIKey := &query.GetUserByAPIKey{APIKey: bearerToken}
 						err = bus.Dispatch(c, getUserByAPIKey)
 						if err != nil {

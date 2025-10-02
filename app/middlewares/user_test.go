@@ -499,6 +499,11 @@ func TestUser_WithJWTBearerToken_MalformedToken(t *testing.T) {
 
 	server := mock.NewServer()
 
+	// Add handler for API key fallback when JWT decoding fails
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByAPIKey) error {
+		return app.ErrNotFound
+	})
+
 	server.Use(middlewares.User())
 	status, _ := server.
 		OnTenant(mock.DemoTenant).
@@ -520,6 +525,11 @@ func TestUser_WithJWTBearerToken_InvalidSignature(t *testing.T) {
 	server := mock.NewServer()
 	// Create a valid token structure but with invalid signature
 	invalidToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyL2lkIjoxLCJ1c2VyL25hbWUiOiJKb24gU25vdyJ9.invalidsignature"
+
+	// Add handler for API key fallback when JWT signature validation fails
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByAPIKey) error {
+		return app.ErrNotFound
+	})
 
 	server.Use(middlewares.User())
 	status, _ := server.
@@ -545,8 +555,13 @@ func TestUser_WithJWTBearerToken_ExpiredToken(t *testing.T) {
 		UserID:   mock.JonSnow.ID,
 		UserName: mock.JonSnow.Name,
 	}
-	expiredClaims.ExpiresAt = time.Now().Add(-1 * time.Hour).Unix()
+	expiredClaims.ExpiresAt = jwt.Time(time.Now().Add(-1 * time.Hour))
 	token, _ := jwt.Encode(expiredClaims)
+
+	// Add handler for API key fallback when JWT expiration validation fails
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByAPIKey) error {
+		return app.ErrNotFound
+	})
 
 	server.Use(middlewares.User())
 	status, _ := server.
