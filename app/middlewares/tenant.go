@@ -44,13 +44,32 @@ func SingleTenant() web.MiddlewareFunc {
 	}
 }
 
-// MultiTenant extract tenant information from hostname and inject it into current context
+// MultiTenant extract tenant information from hostname or X-Tenant-ID header and inject it into current context
 func MultiTenant() web.MiddlewareFunc {
 	return func(next web.HandlerFunc) web.HandlerFunc {
 		return func(c *web.Context) error {
-			hostname := c.Request.URL.Hostname()
+			// Priority 1: Check X-Tenant-ID header (for cross-origin SPA clients)
+			// Priority 2: Fall back to hostname resolution
+			headerTenantID := c.Request.GetHeader("X-Tenant-ID")
+			
+			// Strip port if present (e.g., "domain.com:3000" -> "domain.com")
+			if headerTenantID != "" {
+				if colonIndex := strings.Index(headerTenantID, ":"); colonIndex >= 0 {
+					headerTenantID = headerTenantID[:colonIndex]
+				}
+			}
+			
+			// Determine which domain to use for tenant resolution
+			domain := ""
+			if headerTenantID != "" {
+				// X-Tenant-ID header takes precedence
+				domain = headerTenantID
+			} else {
+				// Fall back to hostname from request URL
+				domain = c.Request.URL.Hostname()
+			}
 
-			byDomain := &query.GetTenantByDomain{Domain: hostname}
+			byDomain := &query.GetTenantByDomain{Domain: domain}
 			err := bus.Dispatch(c, byDomain)
 			if err != nil && errors.Cause(err) != app.ErrNotFound {
 				return c.Failure(err)
