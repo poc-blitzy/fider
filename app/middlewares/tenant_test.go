@@ -208,6 +208,203 @@ func TestMultiTenant_CanonicalHeader(t *testing.T) {
 
 }
 
+func TestMultiTenant_WithXTenantIDHeader(t *testing.T) {
+	RegisterT(t)
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetTenantByDomain) error {
+		if q.Domain == "avengers.test.fider.io" {
+			q.Result = mock.AvengersTenant
+			return nil
+		} else if q.Domain == "demo.test.fider.io" {
+			q.Result = mock.DemoTenant
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Test: X-Tenant-ID header successfully resolves tenant
+	server := mock.NewServer()
+	server.Use(middlewares.MultiTenant())
+	server.AddHeader("X-Tenant-ID", "avengers.test.fider.io")
+
+	status, response := server.WithURL("http://anyhost.example.com").Execute(func(c *web.Context) error {
+		return c.String(http.StatusOK, c.Tenant().Name)
+	})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Avengers")
+}
+
+func TestMultiTenant_XTenantIDHeader_PriorityOverHostname(t *testing.T) {
+	RegisterT(t)
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetTenantByDomain) error {
+		if q.Domain == "avengers.test.fider.io" {
+			q.Result = mock.AvengersTenant
+			return nil
+		} else if q.Domain == "demo.test.fider.io" {
+			q.Result = mock.DemoTenant
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Test: X-Tenant-ID header takes priority over hostname
+	// Request URL suggests demo.test.fider.io, but header says avengers.test.fider.io
+	server := mock.NewServer()
+	server.Use(middlewares.MultiTenant())
+	server.AddHeader("X-Tenant-ID", "avengers.test.fider.io")
+
+	status, response := server.WithURL("http://demo.test.fider.io").Execute(func(c *web.Context) error {
+		return c.String(http.StatusOK, c.Tenant().Name)
+	})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Avengers") // Should be Avengers, not Demonstration
+}
+
+func TestMultiTenant_XTenantIDHeader_InvalidTenant(t *testing.T) {
+	RegisterT(t)
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetTenantByDomain) error {
+		if q.Domain == "avengers.test.fider.io" {
+			q.Result = mock.AvengersTenant
+			return nil
+		} else if q.Domain == "demo.test.fider.io" {
+			q.Result = mock.DemoTenant
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Test: Invalid X-Tenant-ID header results in no tenant
+	server := mock.NewServer()
+	server.Use(middlewares.MultiTenant())
+	server.AddHeader("X-Tenant-ID", "nonexistent.test.fider.io")
+
+	status, _ := server.WithURL("http://anyhost.example.com").Execute(func(c *web.Context) error {
+		if c.Tenant() == nil {
+			return c.Ok(web.Map{})
+		}
+		return c.Failure(errors.New("should not have found tenant"))
+	})
+
+	Expect(status).Equals(http.StatusOK)
+}
+
+func TestMultiTenant_XTenantIDHeader_EmptyFallsBackToHostname(t *testing.T) {
+	RegisterT(t)
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetTenantByDomain) error {
+		if q.Domain == "avengers.test.fider.io" {
+			q.Result = mock.AvengersTenant
+			return nil
+		} else if q.Domain == "demo.test.fider.io" {
+			q.Result = mock.DemoTenant
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Test: Empty X-Tenant-ID header falls back to hostname resolution
+	server := mock.NewServer()
+	server.Use(middlewares.MultiTenant())
+	server.AddHeader("X-Tenant-ID", "")
+
+	status, response := server.WithURL("http://demo.test.fider.io").Execute(func(c *web.Context) error {
+		return c.String(http.StatusOK, c.Tenant().Name)
+	})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Demonstration") // Should resolve via hostname
+}
+
+func TestMultiTenant_XTenantIDHeader_MultipleScenarios(t *testing.T) {
+	RegisterT(t)
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetTenantByDomain) error {
+		if q.Domain == "avengers.test.fider.io" {
+			q.Result = mock.AvengersTenant
+			return nil
+		} else if q.Domain == "demo.test.fider.io" {
+			q.Result = mock.DemoTenant
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	var testCases = []struct {
+		description  string
+		url          string
+		headerValue  string
+		expectedName string
+		expectNil    bool
+	}{
+		{
+			"Valid header with matching subdomain",
+			"http://avengers.test.fider.io",
+			"avengers.test.fider.io",
+			"Avengers",
+			false,
+		},
+		{
+			"Valid header with different subdomain",
+			"http://demo.test.fider.io",
+			"avengers.test.fider.io",
+			"Avengers", // Header takes priority
+			false,
+		},
+		{
+			"Valid header with non-tenant hostname",
+			"http://app.example.com",
+			"demo.test.fider.io",
+			"Demonstration",
+			false,
+		},
+		{
+			"No header with valid subdomain",
+			"http://demo.test.fider.io",
+			"",
+			"Demonstration", // Falls back to hostname
+			false,
+		},
+		{
+			"Invalid header with valid subdomain",
+			"http://demo.test.fider.io",
+			"invalid.test.fider.io",
+			"", // Header takes priority but is invalid
+			true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		server := mock.NewServer()
+		server.Use(middlewares.MultiTenant())
+
+		if testCase.headerValue != "" {
+			server.AddHeader("X-Tenant-ID", testCase.headerValue)
+		}
+
+		status, response := server.WithURL(testCase.url).Execute(func(c *web.Context) error {
+			if c.Tenant() == nil {
+				if testCase.expectNil {
+					return c.Ok(web.Map{})
+				}
+				return c.Failure(errors.New("expected tenant but got nil for: " + testCase.description))
+			}
+			if testCase.expectNil {
+				return c.Failure(errors.New("expected nil tenant but got tenant for: " + testCase.description))
+			}
+			return c.String(http.StatusOK, c.Tenant().Name)
+		})
+
+		Expect(status).Equals(http.StatusOK)
+		if !testCase.expectNil {
+			Expect(response.Body.String()).Equals(testCase.expectedName)
+		}
+	}
+}
+
 func TestSingleTenant_NoTenants(t *testing.T) {
 	RegisterT(t)
 
