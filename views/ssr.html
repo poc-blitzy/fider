@@ -6,7 +6,7 @@
   {{end}}
 {{end}}
 
-{{define "server-data"}}{{end}}
+{{define "server-data"}} {{ toJSON .public }} {{ end }}
 
 {{define "content"}}
 <div id="root">{{ .public.props.html }}</div>

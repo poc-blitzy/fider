@@ -169,7 +169,9 @@ func (s *Server) ExecutePost(handler web.HandlerFunc, body string) (int, *httpte
 
 // ExecuteAsOptions executes given handler as OPTIONS request and return response
 func (s *Server) ExecuteAsOptions(handler web.HandlerFunc) (int, *httptest.ResponseRecorder) {
-	s.context.Request.Method = "OPTIONS"
+	// Modify the underlying http.Request BEFORE calling Execute
+	// This ensures the modifications persist when Execute creates a new context
+	s.httpRequest.Method = "OPTIONS"
 	return s.Execute(handler)
 }
 
@@ -187,8 +189,18 @@ func (s *Server) ExecuteAsPage(handler web.HandlerFunc) (int, *web.Props) {
 	startTag := "<script id=\"server-data\" type=\"application/json\">"
 	endTag := "</script>"
 
-	startIndex := strings.Index(bodyString, startTag) + len(startTag)
+	// Find the start tag
+	startTagIndex := strings.Index(bodyString, startTag)
+	if startTagIndex == -1 {
+		panic(errors.New("server-data script tag not found in response"))
+	}
+	startIndex := startTagIndex + len(startTag)
+
+	// Find the end tag
 	endIndex := strings.Index(bodyString[startIndex:], endTag)
+	if endIndex == -1 {
+		panic(errors.New("closing script tag not found in response"))
+	}
 
 	serverData := strings.TrimSpace(bodyString[startIndex : startIndex+endIndex])
 	serverDataJSON := map[string]any{}
