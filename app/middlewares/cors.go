@@ -16,11 +16,11 @@ func CORS() web.MiddlewareFunc {
 			// Read configuration from environment variables (supports dynamic test config)
 			allowedOriginsStr := os.Getenv("ALLOWED_ORIGINS")
 			allowCredentials := os.Getenv("CORS_ALLOW_CREDENTIALS") == "true"
-			allowedMethods := os.Getenv("CORS_ALLOWED_METHODS")
+			allowedMethods := os.Getenv("ALLOWED_METHODS")
 			if allowedMethods == "" {
 				allowedMethods = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
 			}
-			allowedHeaders := os.Getenv("CORS_ALLOWED_HEADERS")
+			allowedHeaders := os.Getenv("ALLOWED_HEADERS")
 			if allowedHeaders == "" {
 				allowedHeaders = "Authorization,Content-Type,X-Tenant-ID"
 			}
