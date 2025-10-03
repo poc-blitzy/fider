@@ -286,7 +286,13 @@ func (c *Context) Failure(err error) error {
 // HandleValidation handles given validation result property to return 400 or 500
 func (c *Context) HandleValidation(result *validate.Result) error {
 	if result.Err != nil {
-		return c.Failure(result.Err)
+		// Check if the underlying error is ErrNotFound
+		if errors.Cause(result.Err) == app.ErrNotFound {
+			return c.NotFound()
+		}
+		return c.BadRequest(Map{
+			"errors": []validate.ErrorItem{{Message: result.Err.Error()}},
+		})
 	}
 
 	if !result.Authorized {

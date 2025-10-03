@@ -21,10 +21,12 @@ import (
 
 // Server is a HTTP server wrapper for testing purpose
 type Server struct {
-	engine     *web.Engine
-	context    *web.Context
-	recorder   *httptest.ResponseRecorder
-	middleware []web.MiddlewareFunc
+	engine      *web.Engine
+	context     *web.Context
+	recorder    *httptest.ResponseRecorder
+	middleware  []web.MiddlewareFunc
+	params      map[string]string  // Store parameters to preserve them across context resets
+	httpRequest *http.Request      // Store original http.Request for context recreation
 }
 
 func createServer() *Server {
@@ -45,10 +47,12 @@ func createServer() *Server {
 	context := web.NewContext(engine, request, recorder, params)
 
 	return &Server{
-		engine:     engine,
-		recorder:   recorder,
-		context:    context,
-		middleware: []web.MiddlewareFunc{},
+		engine:      engine,
+		recorder:    recorder,
+		context:     context,
+		middleware:  []web.MiddlewareFunc{},
+		params:      make(map[string]string), // Initialize params map for test parameter preservation
+		httpRequest: request,                  // Store original http.Request for context recreation
 	}
 }
 
@@ -79,7 +83,9 @@ func (s *Server) AsUser(user *entity.User) *Server {
 
 // AddParam to current context route parameters
 func (s *Server) AddParam(name string, value any) *Server {
-	s.context.AddParam(name, fmt.Sprintf("%v", value))
+	strValue := fmt.Sprintf("%v", value)
+	s.params[name] = strValue // Save parameter for later restoration
+	s.context.AddParam(name, strValue)
 	return s
 }
 
@@ -104,15 +110,42 @@ func (s *Server) WithURL(fullURL string) *Server {
 
 // Execute given handler and return response
 func (s *Server) Execute(handler web.HandlerFunc) (int, *httptest.ResponseRecorder) {
+	// Reset the recorder for each execution to prevent state carryover
+	s.recorder = httptest.NewRecorder()
+	
+	// Preserve tenant and user from old context before creating new one
+	oldTenant := s.context.Tenant()
+	oldUser := s.context.User()
+	
+	// Pass saved parameters to new context (no need to restore individually since they're passed to NewContext)
+	s.context = web.NewContext(s.engine, s.httpRequest, s.recorder, s.params)
+	
+	// Restore tenant and user to the new context
+	if oldTenant != nil {
+		s.context.SetTenant(oldTenant)
+	}
+	if oldUser != nil {
+		s.context.SetUser(oldUser)
+	}
+	
 	next := handler
 	for i := len(s.middleware) - 1; i >= 0; i-- {
 		next = s.middleware[i](next)
 	}
 
 	if err := next(s.context); err != nil {
-		_ = s.context.Failure(err)
+		// Only call Failure if handler hasn't already written a response
+		// If Response.StatusCode != 0, handler already called WriteHeader (e.g., via c.JSON, c.Blob)
+		// and we should not overwrite the response
+		if s.context.Response.StatusCode == 0 {
+			// Handler errored without writing a response, so write error page
+			if failureErr := s.context.Failure(err); failureErr != nil {
+				panic(fmt.Sprintf("failed to write error response: %v (original error: %v)", failureErr, err))
+			}
+		}
+		// If StatusCode != 0, handler already wrote response (possibly with error status)
+		// Don't overwrite it by calling Failure
 	}
-
 	return s.recorder.Code, s.recorder
 }
 
@@ -124,10 +157,12 @@ func (s *Server) ExecuteAsJSON(handler web.HandlerFunc) (int, *jsonq.Query) {
 
 // ExecutePost executes given handler as POST and return response
 func (s *Server) ExecutePost(handler web.HandlerFunc, body string) (int, *httptest.ResponseRecorder) {
-	s.context.Request.Method = "POST"
-	s.context.Request.Body = body
-	s.context.Request.ContentLength = int64(len(body))
-	s.context.Request.SetHeader("Content-Type", web.UTF8JSONContentType)
+	// Modify the underlying http.Request BEFORE calling Execute
+	// This ensures the modifications persist when Execute creates a new context
+	s.httpRequest.Method = "POST"
+	s.httpRequest.Body = io.NopCloser(strings.NewReader(body))
+	s.httpRequest.ContentLength = int64(len(body))
+	s.httpRequest.Header.Set("Content-Type", web.UTF8JSONContentType)
 
 	return s.Execute(handler)
 }
@@ -177,9 +212,5 @@ func (s *Server) ExecuteAsPage(handler web.HandlerFunc) (int, *web.Props) {
 }
 
 func toJSONQuery(response *httptest.ResponseRecorder) *jsonq.Query {
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-	return jsonq.New(string(b))
+	return jsonq.New(response.Body.String())
 }
