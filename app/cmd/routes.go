@@ -196,6 +196,11 @@ func routes(r *web.Engine) *web.Engine {
 	// Does not require authentication
 	publicApi := r.Group()
 	{
+		// Authentication endpoints for cross-origin SPA clients
+		publicApi.Post("/api/v1/auth/login", apiv1.Login())
+		publicApi.Post("/api/v1/auth/refresh", apiv1.Refresh())
+		publicApi.Post("/api/v1/auth/logout", apiv1.Logout())
+
 		publicApi.Get("/api/v1/similarposts", apiv1.FindSimilarPosts())
 		publicApi.Get("/api/v1/posts", apiv1.SearchPosts())
 		publicApi.Get("/api/v1/tags", apiv1.ListTags())
