@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"net"
 	"path"
 	"strings"
 
@@ -56,7 +57,16 @@ func MultiTenant() web.MiddlewareFunc {
 			
 			if tenantID != "" {
 				// Header present: use the provided tenant identifier for resolution
-				domain = tenantID
+				// Strip port number if present (e.g., "acme:8080" -> "acme")
+				// Strip port number if present using net.SplitHostPort
+				host, _, err := net.SplitHostPort(tenantID)
+				if err != nil {
+					// No port present, use the original value
+					domain = tenantID
+				} else {
+					// Port was present, use the host part
+					domain = host
+				}
 			} else {
 				// Header absent: fall back to hostname-based resolution (subdomain or CNAME)
 				// This preserves backward compatibility with existing same-origin clients
