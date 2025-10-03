@@ -31,11 +31,22 @@ func GetTemplate(baseFileName, templateFileName string) *template.Template {
 }
 
 func Render(ctx context.Context, tmpl *template.Template, w io.Writer, data any) error {
-	if err := template.Must(tmpl.Clone()).Funcs(template.FuncMap{
-		"translate": func(key string, params ...i18n.Params) string {
-			return i18n.T(ctx, key, params...)
-		},
-	}).Execute(w, data); err != nil {
+	// Clone the template to avoid modifying the original
+	cloned := template.Must(tmpl.Clone())
+	
+	// Copy the existing function map from templateFunctions to avoid modifying the global
+	funcs := make(template.FuncMap)
+	for k, v := range templateFunctions {
+		funcs[k] = v
+	}
+	
+	// Add the translate function with the current context
+	funcs["translate"] = func(key string, params ...i18n.Params) string {
+		return i18n.T(ctx, key, params...)
+	}
+	
+	// Apply the merged function map and execute
+	if err := cloned.Funcs(funcs).Execute(w, data); err != nil {
 		return err
 	}
 	return nil
