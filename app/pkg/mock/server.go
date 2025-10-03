@@ -132,6 +132,12 @@ func (s *Server) ExecutePost(handler web.HandlerFunc, body string) (int, *httpte
 	return s.Execute(handler)
 }
 
+// ExecuteAsOptions executes given handler as OPTIONS request and return response
+func (s *Server) ExecuteAsOptions(handler web.HandlerFunc) (int, *httptest.ResponseRecorder) {
+	s.context.Request.Method = "OPTIONS"
+	return s.Execute(handler)
+}
+
 // ExecutePostAsJSON executes given handler as POST and return json response
 func (s *Server) ExecutePostAsJSON(handler web.HandlerFunc, body string) (int, *jsonq.Query) {
 	code, response := s.ExecutePost(handler, body)

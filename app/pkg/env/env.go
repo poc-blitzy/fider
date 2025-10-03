@@ -55,6 +55,13 @@ type config struct {
 	JWTSecret                   string `env:"JWT_SECRET,required"`
 	PostCreationWithTagsEnabled bool   `env:"POST_CREATION_WITH_TAGS_ENABLED,default=false"`
 	AllowAllowedSchemes         bool   `env:"ALLOW_ALLOWED_SCHEMES,default=true"`
+	CORS                        struct {
+		AllowedOrigins     string `env:"ALLOWED_ORIGINS"`
+		AllowCredentials   bool   `env:"CORS_ALLOW_CREDENTIALS,default=false"`
+		AllowedMethods     string `env:"CORS_ALLOWED_METHODS,default=GET,POST,PUT,PATCH,DELETE,OPTIONS"`
+		AllowedHeaders     string `env:"CORS_ALLOWED_HEADERS,default=Authorization,Content-Type,X-Tenant-ID"`
+		MaxAge             int    `env:"CORS_MAX_AGE,default=600"`
+	}
 	Paddle                      struct {
 		IsSandbox      bool   `env:"PADDLE_SANDBOX,default=false"`
 		VendorID       string `env:"PADDLE_VENDOR_ID"`
