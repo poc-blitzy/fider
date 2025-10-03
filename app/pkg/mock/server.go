@@ -113,20 +113,22 @@ func (s *Server) Execute(handler web.HandlerFunc) (int, *httptest.ResponseRecord
 	// Reset the recorder for each execution to prevent state carryover
 	s.recorder = httptest.NewRecorder()
 	
-	// Preserve tenant and user from old context before creating new one
+	// Preserve tenant, user, and URL from old context before creating new one
 	oldTenant := s.context.Tenant()
 	oldUser := s.context.User()
+	oldURL := s.context.Request.URL
 	
 	// Pass saved parameters to new context (no need to restore individually since they're passed to NewContext)
 	s.context = web.NewContext(s.engine, s.httpRequest, s.recorder, s.params)
 	
-	// Restore tenant and user to the new context
+	// Restore tenant, user, and URL to the new context
 	if oldTenant != nil {
 		s.context.SetTenant(oldTenant)
 	}
 	if oldUser != nil {
 		s.context.SetUser(oldUser)
 	}
+	s.context.Request.URL = oldURL
 	
 	next := handler
 	for i := len(s.middleware) - 1; i >= 0; i-- {
