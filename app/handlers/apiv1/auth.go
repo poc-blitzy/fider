@@ -214,7 +214,7 @@ func generateAccessToken(user *entity.User) (string, error) {
 		UserID:    user.ID,
 		UserName:  user.Name,
 		UserEmail: user.Email,
-		Origin:    jwt.FiderClaimsOriginUI,
+		Origin:    jwt.FiderClaimsOriginAPI,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(time.Now().Add(AccessTokenExpiration)),
 		},
