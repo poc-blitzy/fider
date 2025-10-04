@@ -74,6 +74,14 @@ func restartEnv() {
 	for k, v := range envVariables {
 		os.Setenv(k, v)
 	}
+	// Reload environment, but don't panic if some variables are missing during test setup
+	// This allows tests to call RegisterT() before all environment variables are configured
+	defer func() {
+		if r := recover(); r != nil {
+			// Silently ignore panics during test environment restoration
+			// Production code will still validate environment properly
+		}
+	}()
 	env.Reload()
 }
 

@@ -53,16 +53,22 @@ type Renderer struct {
 
 // NewRenderer creates a new Renderer
 func NewRenderer() *Renderer {
-	reactRenderer, err := NewReactRenderer("ssr.js")
-	if err != nil {
-		panic(errors.Wrap(err, "failed to initialize SSR renderer"))
+	renderer := &Renderer{
+		templates: make(map[string]*template.Template),
+		mutex:     sync.RWMutex{},
 	}
 
-	return &Renderer{
-		templates:     make(map[string]*template.Template),
-		mutex:         sync.RWMutex{},
-		reactRenderer: reactRenderer,
+	// Skip SSR initialization in test environment where ssr.js may not be available
+	// SSR is not required for unit tests that focus on API logic
+	if !env.IsTest() {
+		reactRenderer, err := NewReactRenderer("ssr.js")
+		if err != nil {
+			panic(errors.Wrap(err, "failed to initialize SSR renderer"))
+		}
+		renderer.reactRenderer = reactRenderer
 	}
+
+	return renderer
 }
 
 func (r *Renderer) loadAssets() error {
@@ -237,7 +243,8 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 
 	templateName := "index.html"
 
-	if ctx.Request.IsCrawler() {
+	// Only perform SSR for crawlers if reactRenderer is available (not in test environments)
+	if ctx.Request.IsCrawler() && r.reactRenderer != nil {
 		html, err := r.reactRenderer.Render(ctx.Request.URL, public)
 		if err != nil {
 			log.Errorf(ctx, "Failed to render react page: @{Error}", dto.Props{

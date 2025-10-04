@@ -34,7 +34,12 @@ func CSRF() web.MiddlewareFunc {
 	return func(next web.HandlerFunc) web.HandlerFunc {
 		return func(c *web.Context) error {
 			var isWriteRequest = c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "DELETE"
-			if isWriteRequest && !c.IsAjax() {
+			var hasBearerToken = strings.HasPrefix(c.Request.GetHeader("Authorization"), "Bearer ")
+			
+			// Exempt AJAX requests (JSON content-type) and Bearer token requests from CSRF validation
+			// AJAX requests are safe because browsers enforce CORS
+			// Bearer tokens are safe because they're not automatically sent like cookies
+			if isWriteRequest && !c.IsAjax() && !hasBearerToken {
 				return c.Forbidden()
 			}
 			return next(c)

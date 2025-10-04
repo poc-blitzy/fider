@@ -20,7 +20,7 @@ func TestReactRenderer_FileNotFound(t *testing.T) {
 func TestReactRenderer_EmptyFile(t *testing.T) {
 	RegisterT(t)
 
-	r, err := web.NewReactRenderer("/app/pkg/web/testdata/empty.js")
+	r, err := web.NewReactRenderer("app/pkg/web/testdata/empty.js")
 	Expect(err).IsNil()
 	Expect(r).IsNotNil()
 

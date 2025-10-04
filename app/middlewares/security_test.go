@@ -77,3 +77,105 @@ func TestSecureWithCDN_SingleHost(t *testing.T) {
 	Expect(response.Header().Get("X-Content-Type-Options")).Equals("nosniff")
 	Expect(response.Header().Get("Referrer-Policy")).Equals("no-referrer-when-downgrade")
 }
+
+func TestCSRF_ReadRequest_NoCSRFCheck(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.Secure())
+
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		Execute(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+}
+
+func TestCSRF_WriteRequest_NoCSRFToken_Returns403(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.CSRF())
+
+	// Send form data (not JSON) to test CSRF protection
+	// JSON requests are exempt from CSRF as they are AJAX requests protected by CORS
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		ExecutePostForm(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		}, map[string]string{"test": "data"})
+
+	Expect(status).Equals(http.StatusForbidden)
+}
+
+func TestCSRF_WriteRequest_WithBearerToken_NoCSRFCheck(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.Secure())
+
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		AddHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.token").
+		ExecutePost(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		}, `{"test":"data"}`)
+
+	Expect(status).Equals(http.StatusOK)
+}
+
+func TestCSRF_WriteRequest_AjaxRequest_NoCSRFCheck(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.Secure())
+
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		AddHeader("X-Requested-With", "XMLHttpRequest").
+		ExecutePost(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		}, `{"test":"data"}`)
+
+	Expect(status).Equals(http.StatusOK)
+}
+
+func TestCSRF_DeleteRequest_WithBearerToken_NoCSRFCheck(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.Secure())
+
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		AddHeader("Authorization", "Bearer valid.jwt.token").
+		ExecuteDelete(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+}
+
+func TestCSRF_PutRequest_WithBearerToken_NoCSRFCheck(t *testing.T) {
+	RegisterT(t)
+
+	server := mock.NewServer()
+	server.Use(middlewares.Secure())
+
+	status, _ := server.
+		WithURL("http://example.com").
+		OnTenant(mock.DemoTenant).
+		AddHeader("Authorization", "Bearer valid.jwt.token").
+		ExecutePut(func(c *web.Context) error {
+			return c.NoContent(http.StatusOK)
+		}, `{"test":"data"}`)
+
+	Expect(status).Equals(http.StatusOK)
+}

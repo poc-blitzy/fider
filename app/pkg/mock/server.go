@@ -169,11 +169,49 @@ func (s *Server) ExecutePost(handler web.HandlerFunc, body string) (int, *httpte
 	return s.Execute(handler)
 }
 
+// ExecutePostForm executes given handler as POST request with form-urlencoded content type and return response
+func (s *Server) ExecutePostForm(handler web.HandlerFunc, formData map[string]string) (int, *httptest.ResponseRecorder) {
+	// Convert map to form-urlencoded format
+	values := url.Values{}
+	for key, value := range formData {
+		values.Set(key, value)
+	}
+	body := values.Encode()
+
+	// Modify the underlying http.Request BEFORE calling Execute
+	// This ensures the modifications persist when Execute creates a new context
+	s.httpRequest.Method = "POST"
+	s.httpRequest.Body = io.NopCloser(strings.NewReader(body))
+	s.httpRequest.ContentLength = int64(len(body))
+	s.httpRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	return s.Execute(handler)
+}
+
 // ExecuteAsOptions executes given handler as OPTIONS request and return response
 func (s *Server) ExecuteAsOptions(handler web.HandlerFunc) (int, *httptest.ResponseRecorder) {
 	// Modify the underlying http.Request BEFORE calling Execute
 	// This ensures the modifications persist when Execute creates a new context
 	s.httpRequest.Method = "OPTIONS"
+	return s.Execute(handler)
+}
+
+// ExecuteDelete executes given handler as DELETE request and return response
+func (s *Server) ExecuteDelete(handler web.HandlerFunc) (int, *httptest.ResponseRecorder) {
+	// Modify the underlying http.Request BEFORE calling Execute
+	// This ensures the modifications persist when Execute creates a new context
+	s.httpRequest.Method = "DELETE"
+	return s.Execute(handler)
+}
+
+// ExecutePut executes given handler as PUT request with body and return response
+func (s *Server) ExecutePut(handler web.HandlerFunc, body string) (int, *httptest.ResponseRecorder) {
+	// Modify the underlying http.Request BEFORE calling Execute
+	// This ensures the modifications persist when Execute creates a new context
+	s.httpRequest.Method = "PUT"
+	s.httpRequest.Body = io.NopCloser(strings.NewReader(body))
+	s.httpRequest.ContentLength = int64(len(body))
+	s.httpRequest.Header.Set("Content-Type", "application/json")
 	return s.Execute(handler)
 }
 

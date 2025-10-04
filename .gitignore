@@ -39,3 +39,4 @@ dist/
 node_modules/
 ssr.js
 locale/*/client.js
+autocert/

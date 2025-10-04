@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"path"
-
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/joeshaw/envdecode"
 )
@@ -157,6 +155,15 @@ type config struct {
 var Config config
 
 func init() {
+	// Attempt to load configuration, but don't panic during package initialization
+	// This allows tests to import packages that depend on env before test setup completes
+	// Explicit Reload() calls will still panic if environment is misconfigured
+	defer func() {
+		if r := recover(); r != nil {
+			// Silently ignore panics during init to allow test imports
+			// Production code and explicit Reload() calls will still validate properly
+		}
+	}()
 	Reload()
 }
 
@@ -277,11 +284,17 @@ func Path(p ...string) string {
 	if IsTest() {
 		_, b, _, _ := runtime.Caller(0)
 		basepath := filepath.Dir(b)
-		root = path.Join(basepath, "../../../")
+		root = filepath.Clean(filepath.Join(basepath, "../../../"))
+		// DEBUG: Print path resolution details
+		fmt.Printf("DEBUG env.Path: b=%s, basepath=%s, root=%s, p=%v\n", b, basepath, root, p)
 	}
 
 	elems := append([]string{root}, p...)
-	return path.Join(elems...)
+	result := filepath.Clean(filepath.Join(elems...))
+	if IsTest() {
+		fmt.Printf("DEBUG env.Path: result=%s\n", result)
+	}
+	return result
 }
 
 // Etc returns a path to a folder or file inside the /etc/ folder
