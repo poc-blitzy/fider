@@ -10,7 +10,7 @@ export async function activateI18N(locale: string) {
   try {
     const content = await import(
       /* webpackChunkName: "locale-[request]" */
-      `@locale/${locale}/client.json`
+      `@locale/${locale}/client.js`
     )
     return activateI18NSync(locale, content.messages)
   } catch (err) {

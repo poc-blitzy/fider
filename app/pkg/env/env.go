@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/joeshaw/envdecode"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -155,13 +157,21 @@ type config struct {
 var Config config
 
 func init() {
+	// Load .env file before any configuration parsing
+	// This ensures environment variables are available during package initialization
+	_ = godotenv.Load(".env")
+	
 	// Attempt to load configuration, but don't panic during package initialization
 	// This allows tests to import packages that depend on env before test setup completes
 	// Explicit Reload() calls will still panic if environment is misconfigured
 	defer func() {
 		if r := recover(); r != nil {
-			// Silently ignore panics during init to allow test imports
-			// Production code and explicit Reload() calls will still validate properly
+			// EXPOSE the error instead of silently ignoring it
+			// This helps diagnose configuration issues during startup
+			log.Printf("ERROR: Failed to load environment configuration during init: %v\n", r)
+			log.Printf("This may indicate missing or invalid environment variables.\n")
+			// Re-panic to prevent the application from running with invalid configuration
+			panic(r)
 		}
 	}()
 	Reload()
