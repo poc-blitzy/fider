@@ -52,10 +52,8 @@ func Login() web.HandlerFunc {
 		}
 		if err := bus.Dispatch(c, verifyKey); err != nil {
 			if errors.Cause(err) == app.ErrNotFound {
-				return c.Unauthorized(web.Map{
-					"errors": []web.Map{
-						{"message": "Invalid or expired verification key"},
-					},
+				return c.BadRequest(web.Map{
+					"message": "Invalid or expired verification key",
 				})
 			}
 			return c.Failure(err)
@@ -84,6 +82,13 @@ func Login() web.HandlerFunc {
 		}
 
 		user := userByEmail.Result
+
+		// Validate user belongs to current tenant
+		if user.Tenant.ID != c.Tenant().ID {
+			return c.BadRequest(web.Map{
+				"message": "User does not belong to this tenant",
+			})
+		}
 
 		// Mark verification key as used
 		if err := bus.Dispatch(c, &cmd.SetKeyAsVerified{Key: input.VerificationKey}); err != nil {
