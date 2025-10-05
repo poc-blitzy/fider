@@ -413,7 +413,13 @@ func getAllUsersNames(ctx context.Context, q *query.GetAllUsersNames) error {
 
 func queryUser(ctx context.Context, trx *dbx.Trx, filter string, args ...any) (*entity.User, error) {
 	user := dbUser{}
-	sql := fmt.Sprintf("SELECT id, name, email, tenant_id, role, status, avatar_type, avatar_bkey FROM users WHERE status != %d AND ", enum.UserDeleted)
+	sql := fmt.Sprintf(`SELECT u.id, u.name, u.email, u.tenant_id, u.role, u.status, u.avatar_type, u.avatar_bkey,
+		t.id as "tenants.id", t.name as "tenants.name", t.subdomain as "tenants.subdomain", 
+		t.cname as "tenants.cname", t.status as "tenants.status", t.is_private as "tenants.is_private",
+		t.logo_bkey as "tenants.logo_bkey", t.locale as "tenants.locale", t.is_email_required as "tenants.is_email_required"
+		FROM users u
+		LEFT JOIN tenants t ON t.id = u.tenant_id
+		WHERE u.status != %d AND `, enum.UserDeleted)
 	err := trx.Get(&user, sql+filter, args...)
 	if err != nil {
 		return nil, err

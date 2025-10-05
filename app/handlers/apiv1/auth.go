@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/getfider/fider/app"
+	"github.com/getfider/fider/app/actions"
 	"github.com/getfider/fider/app/models/cmd"
 	"github.com/getfider/fider/app/models/entity"
 	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
-	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/jwt"
 	"github.com/getfider/fider/app/pkg/web"
@@ -32,17 +32,22 @@ const (
 func Login() web.HandlerFunc {
 	return func(c *web.Context) error {
 		// Parse request body for email and verification key
-		var input struct {
-			Email           string `json:"email"`
-			VerificationKey string `json:"verificationKey"`
-		}
+		input := &actions.LoginByEmail{}
 		
-		if err := c.BindTo(&input); err != nil {
-			return c.BadRequest(web.Map{
-				"errors": []web.Map{
-					{"message": "Invalid request body"},
-				},
-			})
+		// BindTo automatically calls the action's Validate() method
+		// which performs field-specific validation for email and verificationKey
+		result := c.BindTo(input)
+		if !result.Ok {
+			// If there's a binding error (malformed JSON), return generic message
+			if result.Err != nil {
+				return c.BadRequest(web.Map{
+					"errors": []web.Map{
+						{"message": "Invalid request format"},
+					},
+				})
+			}
+			// Otherwise, handle validation errors with field-specific messages
+			return c.HandleValidation(result)
 		}
 
 		// Validate verification key
@@ -61,7 +66,7 @@ func Login() web.HandlerFunc {
 
 		// Verify email matches
 		if verifyKey.Result.Email != input.Email {
-			return c.Unauthorized(web.Map{
+			return c.JSON(http.StatusUnauthorized, web.Map{
 				"errors": []web.Map{
 					{"message": "Email does not match verification key"},
 				},
@@ -72,10 +77,8 @@ func Login() web.HandlerFunc {
 		userByEmail := &query.GetUserByEmail{Email: input.Email}
 		if err := bus.Dispatch(c, userByEmail); err != nil {
 			if errors.Cause(err) == app.ErrNotFound {
-				return c.Unauthorized(web.Map{
-					"errors": []web.Map{
-						{"message": "User not found"},
-					},
+				return c.JSON(http.StatusUnauthorized, web.Map{
+					"message": "User not found",
 				})
 			}
 			return c.Failure(err)
@@ -85,9 +88,7 @@ func Login() web.HandlerFunc {
 
 		// Validate user belongs to current tenant
 		if user.Tenant.ID != c.Tenant().ID {
-			return c.BadRequest(web.Map{
-				"message": "User does not belong to this tenant",
-			})
+			return c.Unauthorized()
 		}
 
 		// Mark verification key as used
@@ -129,29 +130,23 @@ func Refresh() web.HandlerFunc {
 		// Get refresh token from cookie
 		cookie, err := c.Request.Cookie(RefreshCookieName)
 		if err != nil {
-			return c.Unauthorized(web.Map{
-				"errors": []web.Map{
-					{"message": "Refresh token not found"},
-				},
+			return c.JSON(http.StatusUnauthorized, web.Map{
+				"message": "Refresh token not found",
 			})
 		}
 
 		// Decode refresh token
 		claims, err := jwt.DecodeFiderClaims(cookie.Value)
 		if err != nil {
-			return c.Unauthorized(web.Map{
-				"errors": []web.Map{
-					{"message": "Invalid refresh token"},
-				},
+			return c.JSON(http.StatusUnauthorized, web.Map{
+				"message": "Invalid refresh token",
 			})
 		}
 
 		// Verify token is refresh token (not access token)
 		if claims.Origin != jwt.FiderClaimsOriginRefresh {
-			return c.Unauthorized(web.Map{
-				"errors": []web.Map{
-					{"message": "Invalid token type"},
-				},
+			return c.JSON(http.StatusUnauthorized, web.Map{
+				"message": "Invalid token type",
 			})
 		}
 
@@ -159,16 +154,21 @@ func Refresh() web.HandlerFunc {
 		userByID := &query.GetUserByID{UserID: claims.UserID}
 		if err := bus.Dispatch(c, userByID); err != nil {
 			if errors.Cause(err) == app.ErrNotFound {
-				return c.Unauthorized(web.Map{
-					"errors": []web.Map{
-						{"message": "User not found"},
-					},
+				return c.JSON(http.StatusUnauthorized, web.Map{
+					"message": "User not found",
 				})
 			}
 			return c.Failure(err)
 		}
 
 		user := userByID.Result
+
+		// Verify user belongs to current tenant (security check)
+		if user.Tenant.ID != c.Tenant().ID {
+			return c.JSON(http.StatusUnauthorized, web.Map{
+				"message": "Invalid tenant",
+			})
+		}
 
 		// Generate new access token
 		accessToken, err := generateAccessToken(user)

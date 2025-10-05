@@ -3,11 +3,15 @@ package apiv1_test
 import (
 	"context"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/getfider/fider/app"
 	"github.com/getfider/fider/app/handlers/apiv1"
+	"github.com/getfider/fider/app/models/cmd"
+	"github.com/getfider/fider/app/models/entity"
+	"github.com/getfider/fider/app/models/enum"
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
 	"github.com/getfider/fider/app/pkg/jwt"
@@ -15,11 +19,44 @@ import (
 	. "github.com/getfider/fider/app/pkg/assert"
 )
 
+// TestMain sets up the test environment
+func TestMain(m *testing.M) {
+	// Set GO_ENV to "test" to skip SSR initialization and prevent ssr.js file requirement
+	os.Setenv("GO_ENV", "test")
+	
+	// Run tests
+	exitCode := m.Run()
+	
+	// Exit with the test result code
+	os.Exit(exitCode)
+}
+
 // TestLogin_Success tests successful login with valid credentials
 func TestLogin_Success(t *testing.T) {
 	RegisterT(t)
 
 	server := mock.NewServer()
+
+	// Mock verification key lookup for login
+	bus.AddHandler(func(ctx context.Context, q *query.GetVerificationByKey) error {
+		if q.Key == "valid-verification-key" && q.Kind == enum.EmailVerificationKindSignIn {
+			q.Result = &entity.EmailVerification{
+				Email:     mock.JonSnow.Email,
+				Name:      mock.JonSnow.Name,
+				Key:       q.Key,
+				Kind:      enum.EmailVerificationKindSignIn,
+				CreatedAt: time.Now(),
+				ExpiresAt: time.Now().Add(15 * time.Minute),
+			}
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Mock setting the key as verified
+	bus.AddHandler(func(ctx context.Context, c *cmd.SetKeyAsVerified) error {
+		return nil
+	})
 
 	// Mock user lookup by email
 	bus.AddHandler(func(ctx context.Context, q *query.GetUserByEmail) error {
@@ -35,7 +72,7 @@ func TestLogin_Success(t *testing.T) {
 		ExecutePostAsJSON(apiv1.Login(),
 			`{
 				"email": "jon.snow@got.com",
-				"password": "test123"
+				"verificationKey": "valid-verification-key"
 			}`)
 
 	Expect(status).Equals(http.StatusOK)
@@ -51,6 +88,28 @@ func TestLogin_InvalidEmail(t *testing.T) {
 
 	server := mock.NewServer()
 
+	// Mock verification key lookup
+	bus.AddHandler(func(ctx context.Context, q *query.GetVerificationByKey) error {
+		if q.Key == "valid-verification-key" {
+			q.Result = &entity.EmailVerification{
+				Email:      "nonexistent@got.com",
+				Name:       "Test User",
+				Key:        "valid-verification-key",
+				UserID:     0,
+				Kind:       enum.EmailVerificationKindSignIn,
+				ExpiresAt:  time.Now().Add(1 * time.Hour),
+				VerifiedAt: nil,
+			}
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Mock setting key as verified
+	bus.AddHandler(func(ctx context.Context, c *cmd.SetKeyAsVerified) error {
+		return nil
+	})
+
 	// Mock user lookup by email - always return not found
 	bus.AddHandler(func(ctx context.Context, q *query.GetUserByEmail) error {
 		return app.ErrNotFound
@@ -61,7 +120,7 @@ func TestLogin_InvalidEmail(t *testing.T) {
 		ExecutePostAsJSON(apiv1.Login(),
 			`{
 				"email": "nonexistent@got.com",
-				"password": "test123"
+				"verificationKey": "valid-verification-key"
 			}`)
 
 	Expect(status).Equals(http.StatusUnauthorized)
@@ -73,29 +132,31 @@ func TestLogin_MissingCredentials(t *testing.T) {
 
 	server := mock.NewServer()
 
-	// Test missing email
+	// Test missing email - action's Validate() returns field-specific error
 	status, response := server.
 		OnTenant(mock.DemoTenant).
 		ExecutePostAsJSON(apiv1.Login(),
 			`{
 				"email": "",
-				"password": "test123"
+				"verificationKey": "test-key-123"
 			}`)
 
 	Expect(status).Equals(http.StatusBadRequest)
-	Expect(response.String("errors[0].message")).Equals("Email and password are required")
+	Expect(response.String("errors[0].field")).Equals("email")
+	Expect(response.String("errors[0].message")).Equals("Email is required.")
 
-	// Test missing password
+	// Test missing verificationKey - action's Validate() returns field-specific error
 	status, response = server.
 		OnTenant(mock.DemoTenant).
 		ExecutePostAsJSON(apiv1.Login(),
 			`{
 				"email": "jon.snow@got.com",
-				"password": ""
+				"verificationKey": ""
 			}`)
 
 	Expect(status).Equals(http.StatusBadRequest)
-	Expect(response.String("errors[0].message")).Equals("Email and password are required")
+	Expect(response.String("errors[0].field")).Equals("verificationKey")
+	Expect(response.String("errors[0].message")).Equals("Verification Key is required.")
 }
 
 // TestLogin_InvalidJSON tests login with malformed JSON
@@ -118,6 +179,28 @@ func TestLogin_WrongTenant(t *testing.T) {
 
 	server := mock.NewServer()
 
+	// Mock verification key lookup
+	bus.AddHandler(func(ctx context.Context, q *query.GetVerificationByKey) error {
+		if q.Key == "test123" {
+			q.Result = &entity.EmailVerification{
+				Email:      mock.JonSnow.Email,
+				Name:       mock.JonSnow.Name,
+				Key:        "test123",
+				UserID:     mock.JonSnow.ID,
+				Kind:       enum.EmailVerificationKindSignIn,
+				ExpiresAt:  time.Now().Add(1 * time.Hour),
+				VerifiedAt: nil,
+			}
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	// Mock setting key as verified
+	bus.AddHandler(func(ctx context.Context, c *cmd.SetKeyAsVerified) error {
+		return nil
+	})
+
 	// Mock user lookup - return user with different tenant ID
 	bus.AddHandler(func(ctx context.Context, q *query.GetUserByEmail) error {
 		if q.Email == mock.JonSnow.Email {
@@ -133,7 +216,7 @@ func TestLogin_WrongTenant(t *testing.T) {
 		ExecutePostAsJSON(apiv1.Login(),
 			`{
 				"email": "jon.snow@got.com",
-				"password": "test123"
+				"verificationKey": "test123"
 			}`)
 
 	Expect(status).Equals(http.StatusUnauthorized)
@@ -151,7 +234,7 @@ func TestRefresh_Success(t *testing.T) {
 		UserID:    mock.JonSnow.ID,
 		UserName:  mock.JonSnow.Name,
 		UserEmail: mock.JonSnow.Email,
-		Origin:    jwt.FiderClaimsOriginAPI,
+		Origin:    jwt.FiderClaimsOriginRefresh,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(refreshTokenExpires),
 			IssuedAt:  jwt.Time(time.Now()),
@@ -169,7 +252,7 @@ func TestRefresh_Success(t *testing.T) {
 	})
 
 	// Set refresh token cookie
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := refreshToken
 
 	status, response := server.
@@ -201,7 +284,7 @@ func TestRefresh_InvalidToken(t *testing.T) {
 	server := mock.NewServer()
 
 	// Set invalid refresh token cookie
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := "invalid.token.value"
 
 	status, _ := server.
@@ -224,7 +307,7 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 		UserID:    mock.JonSnow.ID,
 		UserName:  mock.JonSnow.Name,
 		UserEmail: mock.JonSnow.Email,
-		Origin:    jwt.FiderClaimsOriginAPI,
+		Origin:    jwt.FiderClaimsOriginRefresh,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(expiredTime),
 			IssuedAt:  jwt.Time(time.Now().Add(-8 * time.Hour)),
@@ -233,7 +316,7 @@ func TestRefresh_ExpiredToken(t *testing.T) {
 	Expect(err).IsNil()
 
 	// Set expired refresh token cookie
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := expiredToken
 
 	status, _ := server.
@@ -266,7 +349,7 @@ func TestRefresh_WrongOrigin(t *testing.T) {
 	Expect(err).IsNil()
 
 	// Set refresh token cookie with wrong origin
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := wrongOriginToken
 
 	status, _ := server.
@@ -289,7 +372,7 @@ func TestRefresh_UserNotFound(t *testing.T) {
 		UserID:    mock.JonSnow.ID,
 		UserName:  mock.JonSnow.Name,
 		UserEmail: mock.JonSnow.Email,
-		Origin:    jwt.FiderClaimsOriginAPI,
+		Origin:    jwt.FiderClaimsOriginRefresh,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(refreshTokenExpires),
 			IssuedAt:  jwt.Time(time.Now()),
@@ -303,7 +386,7 @@ func TestRefresh_UserNotFound(t *testing.T) {
 	})
 
 	// Set refresh token cookie
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := refreshToken
 
 	status, _ := server.
@@ -326,7 +409,7 @@ func TestRefresh_WrongTenant(t *testing.T) {
 		UserID:    mock.JonSnow.ID,
 		UserName:  mock.JonSnow.Name,
 		UserEmail: mock.JonSnow.Email,
-		Origin:    jwt.FiderClaimsOriginAPI,
+		Origin:    jwt.FiderClaimsOriginRefresh,
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(refreshTokenExpires),
 			IssuedAt:  jwt.Time(time.Now()),
@@ -344,7 +427,7 @@ func TestRefresh_WrongTenant(t *testing.T) {
 	})
 
 	// Set refresh token cookie
-	refreshTokenName := apiv1.RefreshTokenCookieName
+	refreshTokenName := apiv1.RefreshCookieName
 	refreshTokenValue := refreshToken
 
 	// Use a different tenant than JonSnow's tenant
