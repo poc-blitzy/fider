@@ -53,18 +53,6 @@ func Reset() {
 // Services that set via Init(...services) are always registered (regardless of Enabled() function)
 /// and have preference over services registered from bus.Register
 func Init(forcedServices ...Service) []Service {
-	// Clear handlers, listeners, and counters for test isolation
-	busLock.Lock()
-	handlers = make(map[string]HandlerFunc)
-	listeners = make(map[string][]HandlerFunc)
-	busLock.Unlock()
-	
-	if shouldCount {
-		counterLock.Lock()
-		handlersCallCounter = make(map[string]int)
-		counterLock.Unlock()
-	}
-
 	initializedServices := make([]Service, 0)
 	for _, svc := range forcedServices {
 		initializedServices = append(initializedServices, svc)
