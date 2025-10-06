@@ -166,7 +166,7 @@ func deleteBlob(ctx context.Context, c *cmd.DeleteBlob) error {
 func using(ctx context.Context, handler func(tenantId sql.NullInt64) error) error {
 	var tenantID sql.NullInt64
 	tenant, ok := ctx.Value(app.TenantCtxKey).(*entity.Tenant)
-	if ok {
+	if ok && tenant != nil {
 		_ = tenantID.Scan(tenant.ID)
 	}
 	return handler(tenantID)
