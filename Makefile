@@ -10,10 +10,10 @@ LDFLAGS += -X github.com/getfider/fider/app/pkg/env.version=${VERSION}
 ##@ Running
 
 run: ## Run Fider
-	godotenv -f .env ./fider
+	/root/go/bin/godotenv -f .env ./fider
 
 migrate: ## Run all database migrations
-	godotenv -f .env ./fider migrate
+	/root/go/bin/godotenv -f .env ./fider migrate
 
 
 
@@ -22,7 +22,7 @@ migrate: ## Run all database migrations
 build: build-server ## Build server
 
 build-server: ## Build server
-	go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
+	/usr/local/go/bin/go build -ldflags '-s -w $(LDFLAGS)' -o fider ./cmd
 
 build-ssr: ## Build server-side rendering bundle
 	NODE_ENV=production node esbuild.config.js
@@ -37,12 +37,12 @@ build-ui: ## Build frontend UI assets
 test: test-server ## Run server tests
 
 test-server: build-server ## Run all server tests
-	godotenv -f .test.env ./fider migrate
-	godotenv -f .test.env go test ./... -race
+	/root/go/bin/godotenv -f .test.env ./fider migrate
+	/root/go/bin/godotenv -f .test.env /usr/local/go/bin/go test ./... -race
 
 coverage-server: build-server ## Run all server tests (with code coverage)
-	godotenv -f .test.env ./fider migrate
-	godotenv -f .test.env go test ./... -coverprofile=cover.out -coverpkg=all -p=8 -race
+	/root/go/bin/godotenv -f .test.env ./fider migrate
+	/root/go/bin/godotenv -f .test.env /usr/local/go/bin/go test ./... -coverprofile=cover.out -coverpkg=all -p=8 -race
 
 
 
