@@ -10,8 +10,8 @@ type BrowserName = "chromium" | "firefox" | "webkit"
 
 // Initialize URLs from environment variables with fallbacks to dev.fider.io patterns
 // These URLs support cross-origin testing between separated frontend and backend
-const frontendUrl = process.env.FRONTEND_URL || "https://login.dev.fider.io:3000"
-const backendUrl = process.env.BACKEND_URL || "https://login.dev.fider.io:3000"
+const frontendUrl = process.env.FRONTEND_URL || "http://login.dev.fider.io:3000"
+const backendUrl = process.env.BACKEND_URL || "http://login.dev.fider.io:3000"
 
 BeforeAll({ timeout: 30 * 1000 }, async function () {
   const name = (process.env.BROWSER || "chromium") as BrowserName
