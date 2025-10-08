@@ -73,6 +73,7 @@
     "sass-loader": "12.6.0",
     "svg-sprite-loader": "6.0.11",
     "svgo-loader": "3.0.0",
+    "tsx": "^4.20.6",
     "typescript": "4.6.4",
     "webpack": "5.94.0",
     "webpack-bundle-analyzer": "4.5.0",
@@ -107,6 +108,11 @@
     "node": "21.x || 22.x"
   },
   "scripts": {
-    "heroku-postbuild": "make build-ssr && make build-ui"
+    "heroku-postbuild": "make build-ssr && make build-ui",
+    "build:e2e": "tsc -p tsconfig.e2e.json",
+    "test:e2e": "npm run build:e2e && npx cucumber-js --config cucumber.cjs",
+    "test:e2e:cors": "npm run build:e2e && API_ONLY_TESTS=true npx cucumber-js --config cucumber.cjs --profile cors",
+    "test:e2e:api": "npm run build:e2e && API_ONLY_TESTS=true npx cucumber-js --config cucumber.cjs --profile api",
+    "test:e2e:ci": "npm run build:e2e && npx cucumber-js --config cucumber.cjs --profile ci"
   }
 }

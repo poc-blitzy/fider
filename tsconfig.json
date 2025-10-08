@@ -18,5 +18,13 @@
       "e2e/*": ["./e2e/*"]
     }
   },
-  "include": ["./public/**/*", "./locale/**/*", "index.d.ts", "./e2e/**/*"]
+  "include": ["./public/**/*", "./locale/**/*", "index.d.ts", "./e2e/**/*"],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "esnext"
+    }
+  }
 }

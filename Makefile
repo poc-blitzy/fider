@@ -48,8 +48,14 @@ coverage-server: build-server ## Run all server tests (with code coverage)
 
 ##@ E2E Testing
 
-test-e2e-server: ## Run all E2E tests
-	npx cucumber-js e2e/features/server/**/*.feature --require-module ts-node/register --require 'e2e/**/*.ts' --publish-quiet
+test-e2e-server: ## Run all E2E tests (API-only, no browser)
+	API_ONLY_TESTS=true /root/go/bin/godotenv -f .test.env npx cucumber-js e2e/features/server/**/*.feature --require-module ts-node/register --require 'e2e/**/*.ts' --publish-quiet
+
+test-e2e-watch-server: migrate-test ## Run server in watch mode with test environment for E2E tests
+	/root/go/bin/air -c air-test.conf
+
+migrate-test: ## Run database migrations with test environment
+	/root/go/bin/godotenv -f .test.env ./fider migrate
 
 
 
