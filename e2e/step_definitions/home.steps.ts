@@ -1,7 +1,7 @@
 import { Given, Then } from "@cucumber/cucumber"
-import { FiderWorld } from "../world"
-import expect from "expect"
-import { getLatestLinkSentTo } from "./fns"
+import { expect } from "@playwright/test"
+import { FiderWorld } from "../world.js"
+import { getLatestLinkSentTo } from "./fns.js"
 
 Given("I go to the home page", async function (this: FiderWorld) {
   await this.page.goto(this.frontendUrl!)

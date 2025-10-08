@@ -126,6 +126,7 @@ jobs:
             --env EMAIL_NOREPLY=noreply@fider.io \
             --env EMAIL_SMTP_HOST=mailhog \
             --env EMAIL_SMTP_PORT=1025 \
+            --env ALLOWED_ORIGINS=http://localhost:3000,http://localhost:8080,http://localhost:5173,https://test.fider.io:8080,http://frontend.example.com,http://login.dev.fider.io:8080,http://login.dev.fider.io:3000 \
             -d --network "${{ job.container.network }}" \
             -v "$PWD"/etc:/app/etc \
             fider-image

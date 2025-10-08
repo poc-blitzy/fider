@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -40,7 +41,17 @@ func CORS() web.MiddlewareFunc {
 				}
 			}
 
+			// Debug: Log request details and headers
+			fmt.Printf("[CORS DEBUG] ===== CORS Middleware Processing =====\n")
+			fmt.Printf("[CORS DEBUG] Request Method: %s\n", c.Request.Method)
+			fmt.Printf("[CORS DEBUG] Request URL: %s\n", c.Request.URL.String())
+			fmt.Printf("[CORS DEBUG] Allowed Origins: %v\n", allowedOrigins)
+			fmt.Printf("[CORS DEBUG] Allow Credentials: %v\n", allowCredentials)
+
 			origin := c.Request.GetHeader("Origin")
+			fmt.Printf("[CORS DEBUG] Extracted Origin Header: '%s'\n", origin)
+
+
 			
 			// Validate origin against allow-list
 			allowedOrigin := ""
@@ -72,7 +83,7 @@ func CORS() web.MiddlewareFunc {
 					// Set Max-Age header only for preflight responses
 					c.Response.Header().Set("Access-Control-Max-Age", strconv.Itoa(maxAge))
 				}
-				return c.NoContent(http.StatusNoContent)
+				return c.NoContent(http.StatusOK)
 			}
 
 			return next(c)

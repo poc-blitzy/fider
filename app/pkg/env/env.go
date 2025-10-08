@@ -159,7 +159,10 @@ var Config config
 func init() {
 	// Load .env file before any configuration parsing
 	// This ensures environment variables are available during package initialization
-	_ = godotenv.Load(".env")
+	// Skip loading .env if GO_ENV is set to "test" (test environment already loaded by Makefile)
+	if os.Getenv("GO_ENV") != "test" {
+		_ = godotenv.Load(".env")
+	}
 	
 	// Attempt to load configuration, but don't panic during package initialization
 	// This allows tests to import packages that depend on env before test setup completes

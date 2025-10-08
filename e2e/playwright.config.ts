@@ -112,32 +112,24 @@ export default defineConfig({
   ],
 
   // Web server configuration for local development
-  // Automatically starts frontend and backend servers before running tests
-  webServer: [
-    {
-      // Frontend development server (Vite)
-      command: 'npm run dev',
-      url: FRONTEND_URL,
-      timeout: 120 * 1000, // 2 minutes for initial build
-      reuseExistingServer: !IS_CI,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: {
-        VITE_API_BASE_URL: BACKEND_URL,
-      },
-    },
-    {
-      // Backend API server (Go)
-      command: 'make start',
-      url: `${BACKEND_URL}/api/v1/health`,
-      timeout: 120 * 1000, // 2 minutes for compilation
-      reuseExistingServer: !IS_CI,
-      stdout: 'pipe',
-      stderr: 'pipe',
-      env: {
-        ALLOWED_ORIGINS: FRONTEND_URL,
-        PORT: new URL(BACKEND_URL).port || '8080',
-      },
-    },
-  ],
+  // Automatically starts backend server before running tests
+  // Note: Frontend is not needed for CORS API testing
+  webServer: {
+    // Backend API server (Go) using test environment
+    // Command uses full paths: godotenv from /root/go/bin and fider binary from ./dist
+    command: '/root/go/bin/godotenv -f .test.env ./dist/fider',
+    
+    // Working directory must be project root where .test.env is located
+    cwd: process.cwd().endsWith('/e2e') 
+      ? process.cwd().replace(/\/e2e$/, '')  // If running from e2e/, go up one level
+      : process.cwd(),  // Otherwise assume we're already in project root
+    
+    url: `${BACKEND_URL}/_health`,
+    timeout: 120 * 1000, // 2 minutes for server startup
+    reuseExistingServer: !IS_CI,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    // Environment variables are loaded from .test.env via godotenv
+    // .test.env already contains: ALLOWED_ORIGINS, ALLOWED_HEADERS, ALLOWED_METHODS
+  },
 });

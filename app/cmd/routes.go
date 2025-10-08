@@ -13,10 +13,30 @@ import (
 	"github.com/getfider/fider/app/pkg/web"
 )
 
+// handleCORSPreflight returns a handler for CORS preflight requests.
+// This is necessary because mux.HandleOPTIONS is disabled to allow the CORS
+// middleware to process requests (see app/pkg/web/engine.go).
+func handleCORSPreflight() web.HandlerFunc {
+	return func(c *web.Context) error {
+		// The CORS middleware has already set all necessary headers
+		// We just need to return a success status
+		return c.Ok(web.Map{})
+	}
+}
+
 func routes(r *web.Engine) *web.Engine {
 	r.Worker().Use(middlewares.WorkerSetup())
 
 	r.Get("/_health", handlers.Health())
+
+	// Apply CORS middleware globally to handle all cross-origin requests
+	// This MUST come before the OPTIONS handler registration to ensure
+	// proper CORS headers are set on preflight responses
+	r.Use(middlewares.CORS())
+
+	// Register global OPTIONS handler for CORS preflight requests
+	// This enables cross-origin SPA communication by handling all OPTIONS requests
+	r.OPTIONS(handleCORSPreflight())
 
 	r.Use(middlewares.CatchPanic())
 	r.Use(middlewares.Instrumentation())
@@ -34,12 +54,13 @@ func routes(r *web.Engine) *web.Engine {
 		return next(c)
 	})
 
+
+
 	r.Use(middlewares.Secure())
 	r.Use(middlewares.Compress())
 
 	assets := r.Group()
 	{
-		assets.Use(middlewares.CORS())
 		assets.Use(middlewares.ClientCache(365 * 24 * time.Hour))
 		assets.Get("/static/favicon", handlers.Favicon())
 		assets.Static("/assets/*filepath", "dist")
@@ -47,7 +68,6 @@ func routes(r *web.Engine) *web.Engine {
 
 	feed := r.Group()
 	{
-		feed.Use(middlewares.CORS())
 		feed.Use(middlewares.WebSetup())
 		feed.Use(middlewares.Tenant())
 		feed.Use(middlewares.NoIndex())
@@ -196,8 +216,6 @@ func routes(r *web.Engine) *web.Engine {
 	// Does not require authentication
 	publicApi := r.Group()
 	{
-		publicApi.Use(middlewares.CORS())
-		
 		// Authentication endpoints for cross-origin SPA clients
 		publicApi.Post("/api/v1/auth/login", apiv1.Login())
 		publicApi.Post("/api/v1/auth/refresh", apiv1.Refresh())
@@ -216,7 +234,6 @@ func routes(r *web.Engine) *web.Engine {
 	// Available to any authenticated user
 	membersApi := r.Group()
 	{
-		membersApi.Use(middlewares.CORS())
 		membersApi.Use(middlewares.IsAuthenticated())
 		membersApi.Use(middlewares.BlockLockedTenants())
 
@@ -240,7 +257,6 @@ func routes(r *web.Engine) *web.Engine {
 	// Available to both collaborators and administrators
 	staffApi := r.Group()
 	{
-		staffApi.Use(middlewares.CORS())
 		staffApi.Use(middlewares.SetLocale("en"))
 		staffApi.Use(middlewares.IsAuthenticated())
 		staffApi.Use(middlewares.IsAuthorized(enum.RoleCollaborator, enum.RoleAdministrator))
@@ -259,7 +275,6 @@ func routes(r *web.Engine) *web.Engine {
 	// Only available to administrators
 	adminApi := r.Group()
 	{
-		adminApi.Use(middlewares.CORS())
 		adminApi.Use(middlewares.SetLocale("en"))
 		adminApi.Use(middlewares.IsAuthenticated())
 		adminApi.Use(middlewares.IsAuthorized(enum.RoleAdministrator))

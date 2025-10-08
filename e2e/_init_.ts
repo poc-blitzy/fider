@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-require("isomorphic-fetch")
+import "isomorphic-fetch"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 // Cross-origin testing support: If FRONTEND_URL or BACKEND_URL is set,
@@ -22,11 +21,14 @@ if (process.env.DEBUG) {
   console.log(`Debug logging enabled: ${process.env.DEBUG}`)
 }
 
-require("ts-node").register({
-  transpileOnly: true,
-  compilerOptions: {
-    target: "es6",
-    strict: true,
-    module: "commonjs",
-  },
-})
+// ts-node registration is now handled by cucumber.js using ts-node/esm loader
+// to support ESM-style imports. The CommonJS module registration below is
+// commented out to prevent conflicts with the ESM loader.
+// require("ts-node").register({
+//   transpileOnly: true,
+//   compilerOptions: {
+//     target: "es6",
+//     strict: true,
+//     module: "commonjs",
+//   },
+// })

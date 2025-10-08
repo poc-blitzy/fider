@@ -1,6 +1,6 @@
 import { Given } from "@cucumber/cucumber"
-import { FiderWorld } from "e2e/world"
-import { getLatestLinkSentTo, isAuthenticated, isAuthenticatedAsUser } from "./fns"
+import { FiderWorld } from "../world.js"
+import { getLatestLinkSentTo, isAuthenticated, isAuthenticatedAsUser } from "./fns.js"
 
 /**
  * Sign-in step for E2E testing with cross-origin authentication support.
