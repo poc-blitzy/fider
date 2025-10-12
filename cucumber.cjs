@@ -13,14 +13,14 @@
  */
 
 const common = {
-  // TypeScript support via ts-node with path mapping support
-  requireModule: ['ts-node/register', 'tsconfig-paths/register'],
+  // Use compiled JavaScript files from dist/e2e directory
+  // TypeScript compilation handled by separate tsc build step
   
-  // Step definition files
-  require: ['e2e/**/*.steps.ts'],
+  // Step definition files (compiled CommonJS)
+  require: ['dist/e2e/**/*.steps.js'],
   
-  // Initialization hooks
-  requireFile: ['e2e/_init_.ts'],
+  // Initialization hooks (compiled CommonJS)
+  requireFile: ['dist/e2e/_init_.js'],
   
   // Output formatting
   format: [
@@ -50,8 +50,7 @@ module.exports = {
     format: [
       'progress-bar',
       'html:e2e-results/cucumber-report.html',
-      'json:e2e-results/cucumber-report.json',
-      '@cucumber/pretty-formatter'
+      'json:e2e-results/cucumber-report.json'
     ]
   },
   
