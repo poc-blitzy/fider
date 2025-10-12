@@ -20,7 +20,7 @@ const common = {
   require: ['dist/e2e/**/*.steps.js'],
   
   // Initialization hooks (compiled CommonJS)
-  requireFile: ['dist/e2e/_init_.js'],
+  requireFile: ['dist/e2e/_init_.js', 'dist/e2e/setup.js'],
   
   // Output formatting
   format: [
