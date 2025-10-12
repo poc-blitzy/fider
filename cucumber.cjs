@@ -16,8 +16,9 @@ const common = {
   // Use compiled JavaScript files from dist/e2e directory
   // TypeScript compilation handled by separate tsc build step
   
-  // Step definition files (compiled CommonJS)
-  require: ['dist/e2e/**/*.steps.js'],
+  // Step definition files and support modules (compiled CommonJS)
+  // Changed from *.steps.js to *.js to include support files like fns.js
+  require: ['dist/e2e/**/*.js'],
   
   // Initialization hooks (compiled CommonJS)
   requireFile: ['dist/e2e/_init_.js', 'dist/e2e/setup.js'],

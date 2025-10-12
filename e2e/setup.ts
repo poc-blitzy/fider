@@ -4,6 +4,8 @@ import * as playwright from "@playwright/test"
 import { getLatestLinkSentTo } from "./step_definitions/fns.js"
 import { FiderWorld } from "./world.js"
 
+console.log('[DEBUG] setup.ts is being loaded')
+
 let browser: playwright.Browser
 let tenantName: string
 type BrowserName = "chromium" | "firefox" | "webkit"
@@ -15,7 +17,11 @@ type BrowserName = "chromium" | "firefox" | "webkit"
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
 const backendUrl = process.env.BACKEND_URL || "http://localhost:8080"
 
+console.log('[DEBUG] frontendUrl:', frontendUrl)
+console.log('[DEBUG] backendUrl:', backendUrl)
+
 BeforeAll({ timeout: 30 * 1000 }, async function () {
+  console.log('[DEBUG] BeforeAll hook executing')
   // Skip browser-based setup for API-only tests (e.g., CORS tests)
   // API-only tests make direct HTTP requests without needing a browser or UI-based tenant creation
   const isApiOnlyTest = process.env.API_ONLY_TESTS === 'true'
@@ -43,6 +49,7 @@ BeforeAll({ timeout: 30 * 1000 }, async function () {
 })
 
 AfterAll(async function () {
+  console.log('[DEBUG] AfterAll hook executing')
   // Skip browser cleanup for API-only tests (browser was never launched)
   const isApiOnlyTest = process.env.API_ONLY_TESTS === 'true'
   
@@ -57,6 +64,10 @@ AfterAll(async function () {
 })
 
 Before(async function (this: FiderWorld) {
+  console.log('[DEBUG] Before hook executing - START')
+  console.log('[DEBUG] Before hook - backendUrl value:', backendUrl)
+  console.log('[DEBUG] Before hook - this object keys:', Object.keys(this))
+  
   // Skip browser/page setup for API-only tests (making direct HTTP requests)
   const isApiOnlyTest = process.env.API_ONLY_TESTS === 'true'
   
@@ -69,6 +80,8 @@ Before(async function (this: FiderWorld) {
     // Initialize URLs for cross-origin testing
     this.frontendUrl = frontendUrl
     this.backendUrl = backendUrl
+    
+    console.log('[DEBUG] Before hook - API-only path - this.backendUrl set to:', this.backendUrl)
     
     // Initialize JWT tokens (will be set by auth steps)
     this.accessToken = null
@@ -89,12 +102,17 @@ Before(async function (this: FiderWorld) {
   this.frontendUrl = frontendUrl
   this.backendUrl = backendUrl
   
+  console.log('[DEBUG] Before hook - normal path - this.backendUrl set to:', this.backendUrl)
+  
   // Initialize JWT tokens (will be set by auth steps)
   this.accessToken = null
   this.refreshToken = null
+  
+  console.log('[DEBUG] Before hook executing - END')
 })
 
 After(async function (this: FiderWorld) {
+  console.log('[DEBUG] After hook executing')
   // Skip page cleanup for API-only tests
   const isApiOnlyTest = process.env.API_ONLY_TESTS === 'true'
   

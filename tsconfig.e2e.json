@@ -20,6 +20,13 @@
       "e2e/*": ["./e2e/*"]
     }
   },
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
   "include": ["./e2e/**/*"],
   "exclude": ["node_modules", "dist"]
 }

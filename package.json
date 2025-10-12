@@ -32,6 +32,7 @@
     "@babel/preset-react": "7.16.7",
     "@babel/preset-typescript": "7.16.7",
     "@cucumber/cucumber": "8.2.0",
+    "@cucumber/pretty-formatter": "^2.3.0",
     "@google-cloud/translate": "^9.1.0",
     "@lingui/babel-plugin-lingui-macro": "^5.1.2",
     "@lingui/cli": "^5.1.2",

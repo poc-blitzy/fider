@@ -1,7 +1,7 @@
 import { Given, Then, When } from "@cucumber/cucumber"
 import { expect } from "@playwright/test"
-import { FiderWorld } from "./world"
-import { parseJwtToken, isTokenExpired, delay } from "./step_definitions/fns"
+import { FiderWorld } from "./world.js"
+import { parseJwtToken, isTokenExpired, delay } from "./step_definitions/fns.js"
 
 // ============================================================================
 // JWT Authentication Steps - POST /api/v1/auth/login
