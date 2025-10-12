@@ -11,4 +11,16 @@ export interface FiderWorld extends CucumberWorld {
   // JWT authentication tokens (null = not authenticated, string = valid token)
   accessToken?: string | null
   refreshToken?: string | null
+  // Authentication test credentials for JWT login flows
+  testCredentials?: {
+    email: string
+    password: string
+  }
+  // API response tracking for authentication and HTTP request testing
+  lastResponse?: Response
+  lastResponseStatus?: number
+  lastResponseBody?: any
+  lastResponseHeaders?: Record<string, string>
+  // Token expiration testing flag for simulating expired token scenarios
+  tokenExpirationTestMode?: boolean
 }
