@@ -1,7 +1,7 @@
 import { Given, Then, When } from "@cucumber/cucumber"
 import { expect } from "@playwright/test"
 import { FiderWorld } from "e2e/world"
-import { parseJwtToken, isTokenExpired, extractAccessTokenFromResponse, delay } from "e2e/step_definitions/fns"
+import { parseJwtToken, isTokenExpired, delay } from "e2e/step_definitions/fns"
 
 // ============================================================================
 // JWT Authentication Steps - POST /api/v1/auth/login
@@ -138,7 +138,7 @@ Then("the refresh token cookie should be scoped to the API domain", async functi
   expect(this.refreshToken).toBeTruthy()
 
   // Extract Domain attribute from Set-Cookie header
-  const domainMatch = this.refreshToken.match(/Domain=([^;]+)/)
+  const domainMatch = this.refreshToken!.match(/Domain=([^;]+)/)
   if (domainMatch) {
     const domain = domainMatch[1]
     // Verify it matches the backend domain (e.g., "api.example.com")
