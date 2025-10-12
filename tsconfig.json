@@ -2,7 +2,8 @@
   "compilerOptions": {
     "module": "esnext",
     "incremental": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "allowArbitraryExtensions": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "es6",
@@ -15,7 +16,9 @@
     "paths": {
       "@fider/*": ["./public/*"],
       "@locale/*": ["./locale/*"],
-      "e2e/*": ["./e2e/*"]
+      "e2e/*": ["./e2e/*"],
+      "react/jsx-runtime.js": ["./node_modules/react/jsx-runtime.js"],
+      "react/jsx-dev-runtime.js": ["./node_modules/react/jsx-dev-runtime.js"]
     }
   },
   "include": ["./public/**/*", "./locale/**/*", "index.d.ts", "./e2e/**/*"],

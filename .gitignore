@@ -40,3 +40,9 @@ node_modules/
 ssr.js
 locale/*/client.js
 autocert/
+
+# E2E test results
+e2e-results/
+
+# TypeScript build info
+tsconfig.tsbuildinfo

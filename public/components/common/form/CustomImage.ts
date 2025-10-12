@@ -1,6 +1,7 @@
 import { ImageUpload } from "@fider/models"
 import Image from "@tiptap/extension-image"
-import * as MarkdownIt from "markdown-it"
+import MarkdownIt from "markdown-it"
+import type { StateInline } from "markdown-it"
 import { defaultMarkdownSerializer } from "prosemirror-markdown"
 
 export interface CustomImageOptions {
@@ -73,7 +74,7 @@ export const CustomImage = Image.extend<CustomImageOptions>({
         parse: {
           setup: (markdownit: MarkdownIt) => {
             // Custom rule to parse our special image syntax
-            markdownit.inline.ruler.before("image", "fider-image", (state: MarkdownIt.StateInline, silent: boolean) => {
+            markdownit.inline.ruler.before("image", "fider-image", (state: StateInline, silent: boolean) => {
               const match = state.src.slice(state.pos).match(/^!\[\]\(fider-image:([a-zA-Z0-9_/.-]+)\)/)
               if (!match) return false
 

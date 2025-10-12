@@ -36,3 +36,10 @@ declare module "*.svg" {
   const content: SpriteSymbol
   export default content
 }
+
+// Custom type declaration to fix @tiptap/react's import of 'react/jsx-runtime.js'
+// @types/react exports './jsx-runtime' without the .js extension, but @tiptap/react
+// imports it with the extension. This declaration bridges the gap.
+declare module "react/jsx-runtime.js" {
+  export * from "react/jsx-runtime";
+}

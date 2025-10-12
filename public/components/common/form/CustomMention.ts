@@ -1,5 +1,6 @@
 import Mention from "@tiptap/extension-mention"
-import * as MarkdownIt from "markdown-it"
+import MarkdownIt from "markdown-it"
+import type { StateInline } from "markdown-it"
 
 export const CustomMention = Mention.extend({
   name: "mention",
@@ -22,7 +23,7 @@ export const CustomMention = Mention.extend({
               return "</span>"
             }
 
-            markdownit.inline.ruler.before("text", "mention", (state: MarkdownIt.StateInline, silent: boolean) => {
+            markdownit.inline.ruler.before("text", "mention", (state: StateInline, silent: boolean) => {
               const match = state.src.slice(state.pos).match(/^@\[(.+?)\]/)
               if (!match) return false
               if (!silent) {

@@ -2,7 +2,7 @@ import { Editor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import React, { useState, useRef, useEffect } from "react"
 import { EditorContent, useEditor } from "@tiptap/react"
-import { Markdown } from "tiptap-markdown"
+import { Markdown, MarkdownStorage } from "tiptap-markdown"
 import Placeholder from "@tiptap/extension-placeholder"
 import Document from "@tiptap/extension-document"
 import Paragraph from "@tiptap/extension-paragraph"
@@ -32,6 +32,13 @@ import { CustomImage } from "./CustomImage"
 import suggestion from "./suggestion"
 import { CustomMention } from "./CustomMention"
 import { Trans } from "@lingui/react/macro"
+
+// Extend TipTap Storage type to include markdown extension
+declare module "@tiptap/core" {
+  interface Storage {
+    markdown?: MarkdownStorage
+  }
+}
 import { classSet } from "@fider/services"
 
 const MenuBar = ({
@@ -247,7 +254,7 @@ const Tiptap: React.FunctionComponent<CommentEditorProps> = (props) => {
       if (isRawMarkdownMode) {
         currentContent = editor.getText()
       } else {
-        currentContent = markdownToHtml(editor.storage.markdown.getMarkdown())
+        currentContent = markdownToHtml(editor.storage.markdown?.getMarkdown() ?? "")
       }
       // Destroy current editor
       editor.destroy()
@@ -311,7 +318,7 @@ const Tiptap: React.FunctionComponent<CommentEditorProps> = (props) => {
 
   const updated = ({ editor }: { editor: Editor; transaction: any }): void => {
     // Get the current markdown content
-    const markdown = isRawMarkdownMode ? editor.getText() : editor.storage.markdown.getMarkdown()
+    const markdown = isRawMarkdownMode ? editor.getText() : (editor.storage.markdown?.getMarkdown() ?? "")
     // Always get plain text regardless of mode
     const plainText = editor.getText()
 
