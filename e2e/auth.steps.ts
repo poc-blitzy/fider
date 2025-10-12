@@ -9,14 +9,14 @@ import { parseJwtToken, isTokenExpired, extractAccessTokenFromResponse, delay } 
 
 Given("I have valid user credentials", async function (this: FiderWorld) {
   // Use test credentials from world context
-  this.credentials = {
-    email: this.testEmail || "test@example.com",
-    password: this.testPassword || "TestPassword123!",
+  this.testCredentials = {
+    email: "test@example.com",
+    password: "TestPassword123!",
   }
 })
 
 Given("I have invalid user credentials", async function (this: FiderWorld) {
-  this.credentials = {
+  this.testCredentials = {
     email: "invalid@example.com",
     password: "WrongPassword",
   }
@@ -27,7 +27,7 @@ Given("I have credentials with email {string} and password {string}", async func
   email: string,
   password: string
 ) {
-  this.credentials = { email, password }
+  this.testCredentials = { email, password }
 })
 
 When("I submit a login request to {string}", async function (this: FiderWorld, endpoint: string) {
@@ -45,7 +45,7 @@ When("I submit a login request to {string}", async function (this: FiderWorld, e
     method: "POST",
     headers,
     credentials: "include", // Required for refresh token cookie
-    body: JSON.stringify(this.credentials),
+    body: JSON.stringify(this.testCredentials),
   })
 
   this.lastResponseHeaders = this.lastResponse.headers
@@ -116,29 +116,29 @@ Then("the response should set a refresh token cookie", async function (this: Fid
   expect(setCookieHeader).toContain("refresh_token")
 
   // Store for later validation
-  this.refreshTokenCookie = setCookieHeader || ""
+  this.refreshToken = setCookieHeader || ""
 })
 
 Then("the refresh token cookie should be HttpOnly", async function (this: FiderWorld) {
-  expect(this.refreshTokenCookie).toBeTruthy()
-  expect(this.refreshTokenCookie).toContain("HttpOnly")
+  expect(this.refreshToken).toBeTruthy()
+  expect(this.refreshToken).toContain("HttpOnly")
 })
 
 Then("the refresh token cookie should be Secure", async function (this: FiderWorld) {
-  expect(this.refreshTokenCookie).toBeTruthy()
-  expect(this.refreshTokenCookie).toContain("Secure")
+  expect(this.refreshToken).toBeTruthy()
+  expect(this.refreshToken).toContain("Secure")
 })
 
 Then("the refresh token cookie should have SameSite=None", async function (this: FiderWorld) {
-  expect(this.refreshTokenCookie).toBeTruthy()
-  expect(this.refreshTokenCookie).toContain("SameSite=None")
+  expect(this.refreshToken).toBeTruthy()
+  expect(this.refreshToken).toContain("SameSite=None")
 })
 
 Then("the refresh token cookie should be scoped to the API domain", async function (this: FiderWorld) {
-  expect(this.refreshTokenCookie).toBeTruthy()
+  expect(this.refreshToken).toBeTruthy()
 
   // Extract Domain attribute from Set-Cookie header
-  const domainMatch = this.refreshTokenCookie.match(/Domain=([^;]+)/)
+  const domainMatch = this.refreshToken.match(/Domain=([^;]+)/)
   if (domainMatch) {
     const domain = domainMatch[1]
     // Verify it matches the backend domain (e.g., "api.example.com")
@@ -147,12 +147,12 @@ Then("the refresh token cookie should be scoped to the API domain", async functi
 })
 
 Then("the refresh token cookie should have all secure attributes", async function (this: FiderWorld) {
-  expect(this.refreshTokenCookie).toBeTruthy()
+  expect(this.refreshToken).toBeTruthy()
 
   // Validate all security attributes are present
-  expect(this.refreshTokenCookie).toContain("HttpOnly")
-  expect(this.refreshTokenCookie).toContain("Secure")
-  expect(this.refreshTokenCookie).toContain("SameSite=None")
+  expect(this.refreshToken).toContain("HttpOnly")
+  expect(this.refreshToken).toContain("Secure")
+  expect(this.refreshToken).toContain("SameSite=None")
 })
 
 // ============================================================================
@@ -289,7 +289,7 @@ Given("I have an expired access token", async function (this: FiderWorld) {
 Given("I have a valid refresh token cookie", async function (this: FiderWorld) {
   // Assume refresh token was set from previous login
   // In real test, this would have been set from login response
-  expect(this.refreshTokenCookie).toBeTruthy()
+  expect(this.refreshToken).toBeTruthy()
 })
 
 When("I request a token refresh from {string}", async function (this: FiderWorld, endpoint: string) {
@@ -338,8 +338,8 @@ Then("the refresh should rotate the refresh token cookie", async function (this:
 
   // New refresh token should be different
   const newRefreshCookie = setCookieHeader || ""
-  expect(newRefreshCookie).not.toBe(this.refreshTokenCookie)
-  this.refreshTokenCookie = newRefreshCookie
+  expect(newRefreshCookie).not.toBe(this.refreshToken)
+  this.refreshToken = newRefreshCookie
 })
 
 Then("the new access token should be valid", async function (this: FiderWorld) {
@@ -417,7 +417,7 @@ Then("I clear my access token", async function (this: FiderWorld) {
 })
 
 Then("I clear my refresh token cookie", async function (this: FiderWorld) {
-  this.refreshTokenCookie = ""
+  this.refreshToken = ""
 })
 
 // ============================================================================
@@ -480,7 +480,7 @@ Then("subsequent requests with the expired token should fail with {int}", async 
 Then("the authentication flow should work cross-origin", async function (this: FiderWorld) {
   // Validate that authentication works with different origins
   expect(this.accessToken).toBeTruthy()
-  expect(this.refreshTokenCookie).toBeTruthy()
+  expect(this.refreshToken).toBeTruthy()
 
   // Verify CORS headers allow the flow
   const allowOrigin = this.lastResponseHeaders?.get("Access-Control-Allow-Origin")
@@ -504,8 +504,8 @@ Then("the access token should be transmitted in Authorization header", async fun
 
 Then("the refresh token should be transmitted as HttpOnly cookie", async function (this: FiderWorld) {
   // This step documents that refresh token is cookie-based
-  expect(this.refreshTokenCookie).toBeTruthy()
-  expect(this.refreshTokenCookie).toContain("HttpOnly")
+  expect(this.refreshToken).toBeTruthy()
+  expect(this.refreshToken).toContain("HttpOnly")
 })
 
 // ============================================================================

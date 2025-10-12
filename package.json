@@ -74,6 +74,7 @@
     "sass-loader": "12.6.0",
     "svg-sprite-loader": "6.0.11",
     "svgo-loader": "3.0.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "webpack": "5.94.0",

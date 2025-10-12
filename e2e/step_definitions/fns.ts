@@ -12,7 +12,7 @@ export async function isAuthenticated(page: Page): Promise<boolean> {
 // On E2E test, every user is created as {userName}-{tenantName}
 export async function isAuthenticatedAsUser(page: Page, userName: string): Promise<boolean> {
   const serverData = JSON.parse(await page.innerText("#server-data"))
-  return serverData.user ? serverData.email.startsWith(userName) : false
+  return serverData.user ? serverData.user.email.startsWith(userName) : false
 }
 
 export async function getLatestLinkSentTo(address: string): Promise<string> {
@@ -21,7 +21,7 @@ export async function getLatestLinkSentTo(address: string): Promise<string> {
   // Use environment variable for configurable MailHog location in cross-origin testing
   const mailhogUrl = process.env.MAILHOG_URL || 'http://localhost:8025'
   const response = await fetch(`${mailhogUrl}/api/v2/search?kind=to&query=${address}`)
-  const responseBody = await response.json()
+  const responseBody = await response.json() as { items: Array<{ Content: { Body: string } }> }
   const emailHtml = responseBody.items[0].Content.Body
   // Updated regex pattern to work with configurable frontend URLs in cross-origin setup
   const reg = /https?:\/\/[^\/]+\/(.*)verify\?k=.+?(?=')/gim

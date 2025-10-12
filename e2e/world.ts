@@ -20,6 +20,7 @@ export interface FiderWorld extends CucumberWorld {
   lastResponse?: Response
   lastResponseStatus?: number
   lastResponseBody?: any
+  lastResponseJson?: any // Parsed JSON from lastResponseBody for easier assertion access
   lastResponseHeaders?: Record<string, string>
   // Token expiration testing flag for simulating expired token scenarios
   tokenExpirationTestMode?: boolean
