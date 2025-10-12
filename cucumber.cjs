@@ -13,8 +13,8 @@
  */
 
 const common = {
-  // TypeScript support via ts-node
-  requireModule: ['ts-node/register'],
+  // TypeScript support via ts-node with path mapping support
+  requireModule: ['ts-node/register', 'tsconfig-paths/register'],
   
   // Step definition files
   require: ['e2e/**/*.steps.ts'],

@@ -43,6 +43,7 @@ autocert/
 
 # E2E test results
 e2e-results/
+test-results/
 
 # TypeScript build info
 tsconfig.tsbuildinfo
