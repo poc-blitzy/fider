@@ -83,7 +83,7 @@ func CORS() web.MiddlewareFunc {
 					// Set Max-Age header only for preflight responses
 					c.Response.Header().Set("Access-Control-Max-Age", strconv.Itoa(maxAge))
 				}
-				return c.NoContent(http.StatusOK)
+				return c.NoContent(http.StatusNoContent)
 			}
 
 			return next(c)
