@@ -1,7 +1,6 @@
 import { Then } from "@cucumber/cucumber"
 import { FiderWorld } from "../world.js"
 import { expect } from "@playwright/test"
-import { isAuthenticated } from "./fns.js"
 
 Then("I should be on the show post page", async function (this: FiderWorld) {
   // Wait for page to fully load with cross-origin data fetching
