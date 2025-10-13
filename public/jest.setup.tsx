@@ -17,3 +17,32 @@ jest.mock("@lingui/react", () => ({
     return <>{value > 1 ? other : one}</>
   },
 }))
+
+// Mock for LinguiJS macro version (used in SignInModal and other components)
+jest.mock("@lingui/react/macro", () => ({
+  Trans: function TransMock({ children, id }: { children?: React.ReactNode; id?: string }) {
+    return <>{children || id}</>
+  },
+
+  t: function tMock(id: string): string {
+    return id
+  },
+
+  Plural: function PluralMock({ value, one, other }: { value: number; one: React.ReactNode; other: React.ReactNode }) {
+    return <>{value > 1 ? other : one}</>
+  },
+}))
+
+// Mock for LinguiJS core (provides the i18n instance)
+jest.mock("@lingui/core", () => ({
+  i18n: {
+    _: (id: string) => id,
+    activate: () => {},
+    load: () => {},
+  },
+  setupI18n: () => ({
+    _: (id: string) => id,
+    activate: () => {},
+    load: () => {},
+  }),
+}))
