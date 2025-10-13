@@ -213,13 +213,13 @@ func Logout() web.HandlerFunc {
 	}
 }
 
-// generateAccessToken creates a short-lived JWT access token for API authentication
+// generateAccessToken creates a short-lived JWT access token for SPA authentication
 func generateAccessToken(user *entity.User) (string, error) {
 	token, err := jwt.Encode(jwt.FiderClaims{
 		UserID:    user.ID,
 		UserName:  user.Name,
 		UserEmail: user.Email,
-		Origin:    jwt.FiderClaimsOriginAPI,
+		Origin:    jwt.FiderClaimsOriginUI, // UI origin for cross-origin SPA clients
 		Metadata: jwt.Metadata{
 			ExpiresAt: jwt.Time(time.Now().Add(AccessTokenExpiration)),
 		},
@@ -254,7 +254,7 @@ func setRefreshCookie(c *web.Context, token string) {
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   c.Request.IsSecure,
+		Secure:   true, // Always secure for production-grade cross-origin authentication
 		SameSite: http.SameSiteNoneMode,
 		Expires:  time.Now().Add(RefreshTokenExpiration),
 	})
