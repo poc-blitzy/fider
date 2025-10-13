@@ -7,11 +7,8 @@ Then("I should be on the show post page", async function (this: FiderWorld) {
   // Wait for page to fully load with cross-origin data fetching
   await this.page.waitForLoadState("networkidle")
 
-  // Verify authentication state before making assertions
-  const authenticated = await isAuthenticated(this.page)
-  if (!authenticated) {
-    throw new Error("User must be authenticated to view post page")
-  }
+  // Note: Both authenticated and non-authenticated users can view posts
+  // No authentication check required here
 
   const container = await this.page.$$("#p-show-post")
   expect(container).toBeDefined()
