@@ -46,7 +46,7 @@ export const ResponseDetails = (props: PostResponseProps): JSX.Element | null =>
   )
 }
 
-const getLozengeProps = (status: PostStatus): { icon: SpriteSymbol; bg: string; color: string; border: string } => {
+const getLozengeProps = (status: PostStatus): { icon: SpriteSymbol | string; bg: string; color: string; border: string } => {
   switch (status) {
     case PostStatus.Declined:
       return { icon: HeroIconThumbsDown, bg: "bg-red-100", color: "text-red-800", border: "border-red-300" }

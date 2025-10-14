@@ -55,41 +55,69 @@ func User() web.MiddlewareFunc {
 					}
 					return err
 				}
-			} else if c.Request.IsAPI() {
+			}
+
+			// Try Bearer token authentication for API requests (JWT or API key)
+			if user == nil && c.Request.IsAPI() {
 				authHeader := c.Request.GetHeader("Authorization")
-				parts := strings.Split(authHeader, "Bearer")
-				if len(parts) == 2 {
-					apiKey := strings.TrimSpace(parts[1])
-					getUserByAPIKey := &query.GetUserByAPIKey{APIKey: apiKey}
-					err = bus.Dispatch(c, getUserByAPIKey)
-					if err != nil {
-						if errors.Cause(err) == app.ErrNotFound {
-							return c.HandleValidation(validate.Failed("API Key is invalid"))
-						}
-						return err
-					}
-					user = getUserByAPIKey.Result
+				if strings.HasPrefix(authHeader, "Bearer ") {
+					bearerToken := strings.TrimSpace(authHeader[7:]) // Skip "Bearer " (7 characters)
 
-					if !user.IsCollaborator() {
-						return c.HandleValidation(validate.Failed("API Key is invalid"))
+					if bearerToken == "" {
+						return c.Unauthorized()
 					}
 
-					if impersonateUserIDStr := c.Request.GetHeader("X-Fider-UserID"); impersonateUserIDStr != "" {
-						if !user.IsAdministrator() {
-							return c.HandleValidation(validate.Failed("Only Administrators are allowed to impersonate another user"))
-						}
-						impersonateUserID, err := strconv.Atoi(impersonateUserIDStr)
+					// Try JWT Bearer token first
+					claims, err := jwt.DecodeFiderClaims(bearerToken)
+					if err == nil {
+						// Valid JWT token - authenticate user from claims
+						userByClaimsID := &query.GetUserByID{UserID: claims.UserID}
+						err = bus.Dispatch(c, userByClaimsID)
 						if err != nil {
-							return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+							// User not found or other error
+							return c.Unauthorized()
 						}
-						userByImpersonateID := &query.GetUserByID{UserID: impersonateUserID}
-						err = bus.Dispatch(c, userByImpersonateID)
-						user = userByImpersonateID.Result
+						user = userByClaimsID.Result
+					} else {
+						// JWT decode failed - check if it looks like a JWT
+						// JWTs have format: header.payload.signature (2 dots)
+						if strings.Count(bearerToken, ".") == 2 {
+							// Token looks like JWT but decode failed - return 401
+							return c.Unauthorized()
+						}
+						// Not JWT format - try as API key
+						getUserByAPIKey := &query.GetUserByAPIKey{APIKey: bearerToken}
+						err = bus.Dispatch(c, getUserByAPIKey)
 						if err != nil {
 							if errors.Cause(err) == app.ErrNotFound {
-								return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+								return c.HandleValidation(validate.Failed("API Key is invalid"))
 							}
 							return err
+						}
+						user = getUserByAPIKey.Result
+
+						if !user.IsCollaborator() {
+							return c.HandleValidation(validate.Failed("API Key is invalid"))
+						}
+
+						// Handle impersonation for API key users
+						if impersonateUserIDStr := c.Request.GetHeader("X-Fider-UserID"); impersonateUserIDStr != "" {
+							if !user.IsAdministrator() {
+								return c.HandleValidation(validate.Failed("Only Administrators are allowed to impersonate another user"))
+							}
+							impersonateUserID, err := strconv.Atoi(impersonateUserIDStr)
+							if err != nil {
+								return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+							}
+							userByImpersonateID := &query.GetUserByID{UserID: impersonateUserID}
+							err = bus.Dispatch(c, userByImpersonateID)
+							user = userByImpersonateID.Result
+							if err != nil {
+								if errors.Cause(err) == app.ErrNotFound {
+									return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+								}
+								return err
+							}
 						}
 					}
 				}

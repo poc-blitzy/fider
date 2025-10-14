@@ -5,6 +5,9 @@ TRUNCATE TABLE tenants RESTART IDENTITY CASCADE;
 INSERT INTO tenants (name, subdomain, created_at, cname, invitation, welcome_message, status, is_private, custom_css, logo_bkey, locale, is_email_auth_allowed, is_feed_enabled, prevent_indexing)
 VALUES ('Demonstration', 'demo', now(), '', '', '', 1, false, '', '', 'en', true, true, false);
 
+INSERT INTO tenants (name, subdomain, created_at, cname, invitation, welcome_message, status, is_private, custom_css, logo_bkey, locale, is_email_auth_allowed, is_feed_enabled, prevent_indexing)
+VALUES ('Game of Thrones', 'got', now(), '', '', '', 1, false, '', '', 'en', true, true, false);
+
 INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
 VALUES ('Jon Snow', 'jon.snow@got.com', 1, now(), 3, 1, 2, '');
 INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at) 
@@ -18,19 +21,6 @@ VALUES (2, 1, 'google', 'GO5678', now());
 INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
 VALUES ('Sansa Stark', 'sansa.stark@got.com', 1, now(), 1, 1, 2, '');
 
-INSERT INTO tenants (name, subdomain, created_at, cname, invitation, welcome_message, status, is_private, custom_css, logo_bkey, locale, is_email_auth_allowed, is_feed_enabled, prevent_indexing)
-VALUES ('Avengers', 'avengers', now(), 'feedback.avengers.com', '', '', 1, false, '', '', 'en', true, true, false);
-
-INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
-VALUES ('Tony Stark', 'tony.stark@avengers.com', 2, now(), 3, 1, 2, '');
-INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at) 
-VALUES (4, 2, 'facebook', 'FB2222', now());
-
-INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
-VALUES ('The Hulk', 'the.hulk@avengers.com', 2, now(), 1, 1, 2, '');
-INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at) 
-VALUES (5, 2, 'google', 'GO1111', now());
-
 -- Create a tenant that has reached the end of it's trial period
 INSERT INTO tenants (name, subdomain, created_at, cname, invitation, welcome_message, status, is_private, custom_css, logo_bkey, locale, is_email_auth_allowed, is_feed_enabled, prevent_indexing)
 VALUES ('Trial Expired', 'trial-expired', now(), 'feedback.trial-expired.com', '', '', 1, false, '', '', 'en', true, true, false);
@@ -39,6 +29,19 @@ VALUES (3, 1, 1,1, now(), CURRENT_DATE - INTERVAL '10 days');
 INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey)
 VALUES ('Trial Expired', 'trial.expired@trial-expired.com', 3, now(), 3, 1, 2, '');
 INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at)
-VALUES (6, 3, 'facebook', 'FB3333', now());
+VALUES (4, 3, 'facebook', 'FB3333', now());
+
+INSERT INTO tenants (name, subdomain, created_at, cname, invitation, welcome_message, status, is_private, custom_css, logo_bkey, locale, is_email_auth_allowed, is_feed_enabled, prevent_indexing)
+VALUES ('Avengers', 'avengers', now(), 'feedback.avengers.com', '', '', 1, false, '', '', 'en', true, true, false);
+
+INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
+VALUES ('Tony Stark', 'tony.stark@avengers.com', 4, now(), 3, 1, 2, '');
+INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at) 
+VALUES (5, 4, 'facebook', 'FB2222', now());
+
+INSERT INTO users (name, email, tenant_id, created_at, role, status, avatar_type, avatar_bkey) 
+VALUES ('The Hulk', 'the.hulk@avengers.com', 4, now(), 1, 1, 2, '');
+INSERT INTO user_providers (user_id, tenant_id, provider, provider_uid, created_at) 
+VALUES (6, 4, 'google', 'GO1111', now());
 
 

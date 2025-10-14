@@ -23,6 +23,8 @@ const (
 	FiderClaimsOriginUI = "ui"
 	//FiderClaimsOriginAPI is assigned to Fider claims when the Auth Token is generated through the API
 	FiderClaimsOriginAPI = "api"
+	//FiderClaimsOriginRefresh is assigned to Fider claims when the token is a refresh token for cross-origin authentication
+	FiderClaimsOriginRefresh = "refresh"
 )
 
 // FiderClaims represents what goes into JWT tokens

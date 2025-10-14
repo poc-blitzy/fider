@@ -50,6 +50,24 @@ func (h *notFoundHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) 
 	_ = h.handler(ctx)
 }
 
+type optionsHandler struct {
+	engine  *Engine
+	handler HandlerFunc
+}
+
+func (h *optionsHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	ctx := NewContext(h.engine, req, res, nil)
+	
+	// Apply middleware chain to the handler (same pattern as Engine.handle)
+	// This ensures CORS middleware processes preflight OPTIONS requests
+	wrappedHandler := h.handler
+	for i := len(h.engine.middlewares) - 1; i >= 0; i-- {
+		wrappedHandler = h.engine.middlewares[i](wrappedHandler)
+	}
+	
+	_ = wrappedHandler(ctx)
+}
+
 // HandlerFunc represents an HTTP handler
 type HandlerFunc func(*Context) error
 
@@ -79,6 +97,8 @@ func New() *Engine {
 
 	mux := httprouter.New()
 	mux.SaveMatchedRoutePath = true
+	// Enable automatic OPTIONS handling to allow GlobalOPTIONS handler (with CORS middleware) to process preflight requests
+	mux.HandleOPTIONS = true
 
 	router := &Engine{
 		Context:     ctx,
@@ -246,9 +266,24 @@ func (e *Engine) Delete(path string, handler HandlerFunc) {
 	e.mux.Handle("DELETE", path, e.handle(e.middlewares, handler))
 }
 
+// Options handles HTTP OPTIONS requests (for CORS preflight)
+func (e *Engine) Options(path string, handler HandlerFunc) {
+	e.mux.Handle("OPTIONS", path, e.handle(e.middlewares, handler))
+}
+
 // NotFound register how to handle routes that are not found
 func (e *Engine) NotFound(handler HandlerFunc) {
 	e.mux.NotFound = &notFoundHandler{
+		engine:  e,
+		handler: handler,
+	}
+}
+
+// OPTIONS sets the handler for global OPTIONS requests (CORS preflight)
+// This handler is called when no specific OPTIONS route is registered
+// The handler will be wrapped with all middleware when ServeHTTP is called
+func (e *Engine) OPTIONS(handler HandlerFunc) {
+	e.mux.GlobalOPTIONS = &optionsHandler{
 		engine:  e,
 		handler: handler,
 	}
@@ -308,6 +343,11 @@ func (g *Group) Put(path string, handler HandlerFunc) {
 // Delete handles HTTP DELETE requests
 func (g *Group) Delete(path string, handler HandlerFunc) {
 	g.engine.mux.Handle("DELETE", path, g.engine.handle(g.middlewares, handler))
+}
+
+// Options handles HTTP OPTIONS requests (for CORS preflight)
+func (g *Group) Options(path string, handler HandlerFunc) {
+	g.engine.mux.Handle("OPTIONS", path, g.engine.handle(g.middlewares, handler))
 }
 
 // Static return files from given folder

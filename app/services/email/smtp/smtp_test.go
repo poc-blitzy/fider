@@ -62,7 +62,7 @@ func TestSend_Success(t *testing.T) {
 	})
 
 	Expect(requests).HasLen(1)
-	Expect(requests[0].servername).Equals("localhost:1234")
+	Expect(requests[0].servername).Equals("localhost:1025")
 	Expect(requests[0].auth).Equals(smtp.AgnosticAuth("", "us3r", "p4ss", "localhost"))
 	Expect(requests[0].from).Equals("noreply@random.org")
 	Expect(requests[0].to).Equals([]string{"jon.snow@got.com"})
@@ -144,7 +144,7 @@ func TestBatch_Success(t *testing.T) {
 
 	Expect(requests).HasLen(2)
 
-	Expect(requests[0].servername).Equals("localhost:1234")
+	Expect(requests[0].servername).Equals("localhost:1025")
 	Expect(requests[0].auth).Equals(smtp.AgnosticAuth("", "us3r", "p4ss", "localhost"))
 	Expect(requests[0].from).Equals("noreply@random.org")
 	Expect(requests[0].to).Equals([]string{"jon.snow@got.com"})
@@ -152,7 +152,7 @@ func TestBatch_Success(t *testing.T) {
 	Expect(string(requests[0].body)).ContainsSubstring("Message-ID: ")
 	Expect(string(requests[0].body)).ContainsSubstring("Hello World Jon!")
 
-	Expect(requests[1].servername).Equals("localhost:1234")
+	Expect(requests[1].servername).Equals("localhost:1025")
 	Expect(requests[1].auth).Equals(smtp.AgnosticAuth("", "us3r", "p4ss", "localhost"))
 	Expect(requests[1].from).Equals("noreply@random.org")
 	Expect(requests[1].to).Equals([]string{"arya.start@got.com"})

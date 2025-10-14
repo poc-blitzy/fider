@@ -17,7 +17,7 @@ interface CardDetailsProps {
   expiryDate: string
 }
 
-const brands: { [key: string]: SpriteSymbol } = {
+const brands: { [key: string]: string } = {
   visa: IconVisa,
   master: IconMasterCard,
   american_express: IconAMEX,

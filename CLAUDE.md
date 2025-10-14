@@ -47,7 +47,7 @@ Fider uses a layered architecture with clean separation of concerns:
 
 **Core Structure:**
 
-- `main.go` - Entry point with command routing (ping, migrate, server)
+- `cmd/main.go` - Entry point with command routing (ping, migrate, server)
 - `app/cmd/` - Command implementations and server bootstrap
 - `app/cmd/routes.go` - All routes are defined here
 - `app/handlers/` - HTTP handlers organized by functionality

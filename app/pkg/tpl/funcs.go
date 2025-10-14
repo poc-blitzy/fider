@@ -1,6 +1,7 @@
 package tpl
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -71,6 +72,13 @@ var templateFunctions = map[string]any{
 			input = string([]rune(input)[:length-3]) + "..."
 		}
 		return input
+	},
+	"toJSON": func(v interface{}) (template.JS, error) {
+		bytes, err := json.Marshal(v)
+		if err != nil {
+			return template.JS("{}"), err
+		}
+		return template.JS(bytes), nil
 	},
 }
 

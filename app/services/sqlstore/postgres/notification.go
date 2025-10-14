@@ -190,7 +190,7 @@ func getActiveSubscribers(ctx context.Context, q *query.GetActiveSubscribers) er
 		// If the event doesn't require a subscription, notify everyone
 		if len(q.Event.RequiresSubscriptionUserRoles) == 0 {
 			err = trx.Select(&users, fmt.Sprintf(`
-				SELECT DISTINCT u.id, u.name, u.email, u.tenant_id, u.role, u.status
+				SELECT DISTINCT u.id, u.name, u.email, u.tenant_id AS "tenant.id", u.role, u.status
 				FROM users u
 				LEFT JOIN user_settings set
 				ON set.user_id = u.id
@@ -213,7 +213,7 @@ func getActiveSubscribers(ctx context.Context, q *query.GetActiveSubscribers) er
 		} else {
 			// If the event requires a subscription, notify only those who subscribed
 			err = trx.Select(&users, fmt.Sprintf(`
-				SELECT DISTINCT u.id, u.name, u.email, u.tenant_id, u.role, u.status
+				SELECT DISTINCT u.id, u.name, u.email, u.tenant_id AS "tenant.id", u.role, u.status
 				FROM users u
 				LEFT JOIN post_subscribers sub
 				ON sub.user_id = u.id

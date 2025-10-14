@@ -23,7 +23,7 @@
 {{end}}
 
 {{define "server-data"}} 
-  {{ .public }}
+  {{ toJSON .public }}
 {{ end }}
 
 {{define "content"}}<div id="root"></div><div id="root-modal"></div><div id="root-toastify"></div>{{end}}

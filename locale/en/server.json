@@ -8,6 +8,7 @@
   "property.title": "Title",
   "property.comment": "Comment",
   "property.status": "Status",
+  "property.verificationKey": "Verification Key",
   "validation.required": "{name} is required.",
   "validation.invalid": "{name} is invalid.",
   "validation.invalidvalue": "{name} has an invalid value '{value}'.",

@@ -21,7 +21,7 @@ func RunMigrate() int {
 		log.PropertyKeyContextID: rand.String(32),
 	})
 
-	err := dbx.Migrate(ctx, "/migrations")
+	err := dbx.Migrate(ctx, "migrations")
 	if err != nil {
 		log.Error(ctx, err)
 		return 1

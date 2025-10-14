@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -9,10 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"path"
-
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/joeshaw/envdecode"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -55,6 +55,13 @@ type config struct {
 	JWTSecret                   string `env:"JWT_SECRET,required"`
 	PostCreationWithTagsEnabled bool   `env:"POST_CREATION_WITH_TAGS_ENABLED,default=false"`
 	AllowAllowedSchemes         bool   `env:"ALLOW_ALLOWED_SCHEMES,default=true"`
+	CORS                        struct {
+		AllowedOrigins     string `env:"ALLOWED_ORIGINS"`
+		AllowCredentials   bool   `env:"CORS_ALLOW_CREDENTIALS,default=false"`
+		AllowedMethods     string `env:"CORS_ALLOWED_METHODS,default=GET,POST,PUT,PATCH,DELETE,OPTIONS"`
+		AllowedHeaders     string `env:"CORS_ALLOWED_HEADERS,default=Authorization,Content-Type,X-Tenant-ID"`
+		MaxAge             int    `env:"CORS_MAX_AGE,default=600"`
+	}
 	Paddle                      struct {
 		IsSandbox      bool   `env:"PADDLE_SANDBOX,default=false"`
 		VendorID       string `env:"PADDLE_VENDOR_ID"`
@@ -150,6 +157,26 @@ type config struct {
 var Config config
 
 func init() {
+	// Load .env file before any configuration parsing
+	// This ensures environment variables are available during package initialization
+	// Skip loading .env if GO_ENV is set to "test" (test environment already loaded by Makefile)
+	if os.Getenv("GO_ENV") != "test" {
+		_ = godotenv.Load(".env")
+	}
+	
+	// Attempt to load configuration, but don't panic during package initialization
+	// This allows tests to import packages that depend on env before test setup completes
+	// Explicit Reload() calls will still panic if environment is misconfigured
+	defer func() {
+		if r := recover(); r != nil {
+			// EXPOSE the error instead of silently ignoring it
+			// This helps diagnose configuration issues during startup
+			log.Printf("ERROR: Failed to load environment configuration during init: %v\n", r)
+			log.Printf("This may indicate missing or invalid environment variables.\n")
+			// Re-panic to prevent the application from running with invalid configuration
+			panic(r)
+		}
+	}()
 	Reload()
 }
 
@@ -270,11 +297,17 @@ func Path(p ...string) string {
 	if IsTest() {
 		_, b, _, _ := runtime.Caller(0)
 		basepath := filepath.Dir(b)
-		root = path.Join(basepath, "../../../")
+		root = filepath.Clean(filepath.Join(basepath, "../../../"))
+		// DEBUG: Print path resolution details
+		fmt.Printf("DEBUG env.Path: b=%s, basepath=%s, root=%s, p=%v\n", b, basepath, root, p)
 	}
 
 	elems := append([]string{root}, p...)
-	return path.Join(elems...)
+	result := filepath.Clean(filepath.Join(elems...))
+	if IsTest() {
+		fmt.Printf("DEBUG env.Path: result=%s\n", result)
+	}
+	return result
 }
 
 // Etc returns a path to a folder or file inside the /etc/ folder

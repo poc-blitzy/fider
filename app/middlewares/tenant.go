@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"net"
 	"path"
 	"strings"
 
@@ -44,21 +45,47 @@ func SingleTenant() web.MiddlewareFunc {
 	}
 }
 
-// MultiTenant extract tenant information from hostname and inject it into current context
+// MultiTenant extract tenant information from hostname or X-Tenant-ID header and inject it into current context
+// Resolution priority: X-Tenant-ID header > hostname (subdomain/CNAME)
 func MultiTenant() web.MiddlewareFunc {
 	return func(next web.HandlerFunc) web.HandlerFunc {
 		return func(c *web.Context) error {
-			hostname := c.Request.URL.Hostname()
+			// Priority 1: Try to resolve tenant from X-Tenant-ID header (for cross-origin SPA clients)
+			// This enables frontend applications on different origins to explicitly specify tenant context
+			tenantID := c.Request.GetHeader("X-Tenant-ID")
+			var domain string
+			
+			if tenantID != "" {
+				// Header present: use the provided tenant identifier for resolution
+				// Strip port number if present (e.g., "acme:8080" -> "acme")
+				// Strip port number if present using net.SplitHostPort
+				host, _, err := net.SplitHostPort(tenantID)
+				if err != nil {
+					// No port present, use the original value
+					domain = tenantID
+				} else {
+					// Port was present, use the host part
+					domain = host
+				}
+			} else {
+				// Header absent: fall back to hostname-based resolution (subdomain or CNAME)
+				// This preserves backward compatibility with existing same-origin clients
+				domain = c.Request.URL.Hostname()
+			}
 
-			byDomain := &query.GetTenantByDomain{Domain: hostname}
+			// Query tenant by domain (works for subdomain, CNAME, or explicit header value)
+			byDomain := &query.GetTenantByDomain{Domain: domain}
 			err := bus.Dispatch(c, byDomain)
 			if err != nil && errors.Cause(err) != app.ErrNotFound {
 				return c.Failure(err)
 			}
 
+			// Set tenant in context if found and active
 			if byDomain.Result != nil && !byDomain.Result.IsDisabled() {
 				c.SetTenant(byDomain.Result)
 
+				// Canonical URL handling: only applies to CNAME tenants accessed via non-AJAX requests
+				// This redirects users to the canonical domain if accessing via alternate domain
 				if byDomain.Result.CNAME != "" && !c.IsAjax() {
 					baseURL := web.TenantBaseURL(c, byDomain.Result)
 					if baseURL != c.BaseURL() {

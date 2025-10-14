@@ -1,10 +1,15 @@
 import { Given, Then } from "@cucumber/cucumber"
-import { FiderWorld } from "../world"
-import expect from "expect"
-import { getLatestLinkSentTo } from "./fns"
+import { expect } from "@playwright/test"
+import { FiderWorld } from "../world.js"
+import { getLatestLinkSentTo } from "./fns.js"
 
 Given("I go to the home page", async function (this: FiderWorld) {
-  await this.page.goto(`https://${this.tenantName}.dev.fider.io:3000/`)
+  // Navigate to the home page with tenant-specific Host header
+  // This is required for the monolithic architecture to resolve the correct tenant
+  await this.page.setExtraHTTPHeaders({
+    Host: `${this.tenantName}.test.fider.io`,
+  })
+  await this.page.goto(this.frontendUrl!)
 })
 
 Then("I should be on the home page", async function (this: FiderWorld) {
@@ -51,6 +56,10 @@ Given("I click submit your feedback", async function () {
 Given("I click on the confirmation link", async function (this: FiderWorld) {
   const userEmail = `$user-${this.tenantName}@fider.io`
   const activationLink = await getLatestLinkSentTo(userEmail)
+  // Navigate to the activation link with tenant-specific Host header
+  await this.page.setExtraHTTPHeaders({
+    Host: `${this.tenantName}.test.fider.io`,
+  })
   await this.page.goto(activationLink)
 })
 

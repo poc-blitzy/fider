@@ -70,8 +70,8 @@ func TestBind_DeepNestedStruct(t *testing.T) {
 										 WHERE provider_uid = 'FB2222'`)
 	Expect(err).IsNil()
 	Expect(u.Provider).Equals("facebook")
-	Expect(u.User.ID).Equals(4)
-	Expect(u.User.Tenant.ID).Equals(2)
+	Expect(u.User.ID).Equals(5)
+	Expect(u.User.Tenant.ID).Equals(4)
 }
 
 func TestBind_SimpleStruct_SingleField(t *testing.T) {

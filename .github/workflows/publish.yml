@@ -1,5 +1,10 @@
 name: publish
 
+# Publishes backend Docker images to Docker Hub after successful builds.
+# Note: This workflow publishes backend-only images as part of the separated
+# fider-backend repository architecture. The Dockerfile builds Go backend
+# without frontend assets, which are deployed separately from fider-frontend.
+
 on:
   workflow_run:
     workflows: ["build"]
@@ -33,6 +38,7 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
+      # Build and push backend Docker image for pull request testing
       - name: build and push docker image (pull_request)
         if: ${{ github.event.workflow_run.event == 'pull_request' }}
         uses: docker/build-push-action@v3
@@ -45,6 +51,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Build and push multi-arch backend Docker image for branch commits
+      # Tags: SHA-specific and branch-based (main or stable) for deployment
       - name: build and push docker image (push branch)
         if: ${{ github.event.workflow_run.event == 'push' }}
         uses: docker/build-push-action@v3
@@ -59,6 +67,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Build and push multi-arch backend Docker image for release tags
+      # Tags: Version-specific for production deployment
       - name: build and push docker image (push tag)
         if: ${{ github.event.workflow_run.event == 'release' }}
         uses: docker/build-push-action@v3

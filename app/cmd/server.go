@@ -64,7 +64,7 @@ func startJobs(ctx context.Context) {
 		_ = c.AddJob(jobs.NewJob(ctx, "LockExpiredTenantsJob", jobs.LockExpiredTenantsJobHandler{}))
 	}
 
-	c.Start()
+	go c.Start() // Start cron scheduler in background goroutine to avoid blocking
 }
 
 // on startup, copy all etc/ files from configured blob storage into local etc/ folder

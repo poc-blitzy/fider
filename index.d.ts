@@ -1,3 +1,5 @@
+/// <reference types="@testing-library/jest-dom" />
+
 interface GetPriceResponse {
   price: { net: string }
   error?: {
@@ -24,15 +26,17 @@ declare interface Window {
   Paddle: PaddleSdk
 }
 
+// SVG sprite types - kept for backward compatibility
+// Note: Vite handles SVG imports as URL strings (via vite/client)
+// The <Icon> component accepts both string URLs and SpriteSymbol objects
 interface SpriteSymbol {
   id: string
   viewBox: string
 }
 
-declare let __webpack_nonce__: string
-declare let __webpack_public_path__: string
-
-declare module "*.svg" {
-  const content: SpriteSymbol
-  export default content
+// Custom type declaration to fix @tiptap/react's import of 'react/jsx-runtime.js'
+// @types/react exports './jsx-runtime' without the .js extension, but @tiptap/react
+// imports it with the extension. This declaration bridges the gap.
+declare module "react/jsx-runtime.js" {
+  export * from "react/jsx-runtime";
 }
