@@ -1,20 +1,20 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Playwright Configuration for Cross-Origin E2E Testing
+ * Playwright Configuration for Monolithic E2E Testing
  * 
- * This configuration supports testing the Fider application across separate
- * frontend and backend origins, validating CORS functionality, token-based
- * authentication, and cross-origin API communication.
+ * This configuration tests the Fider application in its monolithic architecture
+ * where the Go backend serves both the frontend static assets and API routes
+ * from a single origin/port.
  * 
  * Environment Variables:
- * - FRONTEND_URL: Frontend SPA origin (default: http://localhost:5173)
- * - BACKEND_URL: Backend API origin (default: http://localhost:8080)
+ * - BACKEND_URL: Application origin (default: http://localhost:8080)
+ * - FRONTEND_URL: [Optional] If set, overrides baseURL (for future multi-server testing)
  * - CI: Set to 'true' in CI environments for optimized settings
  */
 
 // Read environment variables with fallback defaults for local development
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// MONOLITHIC MODE: Both frontend and backend served from the same Go server
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 const IS_CI = process.env.CI === 'true';
 
@@ -47,8 +47,8 @@ export default defineConfig({
 
   // Shared settings for all test projects
   use: {
-    // Base URL for frontend navigation (used with page.goto('/path'))
-    baseURL: FRONTEND_URL,
+    // Base URL for monolithic application (frontend and API both served from here)
+    baseURL: BACKEND_URL,
 
     // Ignore HTTPS certificate errors for local development and staging
     // Required for testing self-signed certificates in non-production environments

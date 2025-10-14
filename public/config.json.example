@@ -1,0 +1,15 @@
+{
+  "apiBaseUrl": "http://localhost:8080",
+  "comment": "This file provides runtime configuration for the Fider frontend SPA.",
+  "usage": [
+    "1. Copy this file to public/config.json in production deployments",
+    "2. Update apiBaseUrl to point to your backend API domain",
+    "3. The frontend will fetch /config.json at startup and use it to override VITE_API_BASE_URL",
+    "4. This enables single build artifacts to be deployed to multiple environments"
+  ],
+  "examples": {
+    "development": "http://localhost:8080",
+    "staging": "https://api.staging.example.com",
+    "production": "https://api.example.com"
+  }
+}

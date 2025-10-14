@@ -36,7 +36,7 @@ func TestEventStorage_AddWithNullClientIP(t *testing.T) {
 	})
 	Expect(err).IsNil()
 
-	count, err := trx.Count("SELECT * FROM events WHERE name = 'posts.delete' AND client_ip IS NULL AND tenant_id = 2")
+	count, err := trx.Count("SELECT * FROM events WHERE name = 'posts.delete' AND client_ip IS NULL AND tenant_id = 4")
 	Expect(err).IsNil()
 	Expect(count).Equals(1)
 }

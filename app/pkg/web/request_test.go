@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	. "github.com/getfider/fider/app/pkg/assert"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/web"
 )
 
@@ -42,7 +43,7 @@ func TestRequest_WithPort(t *testing.T) {
 		&http.Request{
 			Method:     "GET",
 			Header:     header,
-			Host:       "helloworld.com:3000",
+			Host:       "helloworld.com" + testPort,
 			RequestURI: "/echo",
 		},
 	)
@@ -51,9 +52,9 @@ func TestRequest_WithPort(t *testing.T) {
 	Expect(req.GetHeader("Content-Type")).Equals("application/json")
 	Expect(req.URL.Hostname()).Equals("helloworld.com")
 	Expect(req.URL.Scheme).Equals("http")
-	Expect(req.URL.Port()).Equals("3000")
+	Expect(req.URL.Port()).Equals(env.Config.Port)
 	Expect(req.URL.RequestURI()).Equals("/echo")
-	Expect(req.URL.String()).Equals("http://helloworld.com:3000/echo")
+	Expect(req.URL.String()).Equals("http://helloworld.com" + testPort + "/echo")
 }
 
 func TestRequest_BehindTLSTerminationProxy(t *testing.T) {
@@ -100,7 +101,7 @@ func TestIsCustomDomain(t *testing.T) {
 func TestRequest_FullURL(t *testing.T) {
 	RegisterT(t)
 
-	req1 := web.WrapRequest(&http.Request{Host: "demo.test.fider.io:3000"})
+	req1 := web.WrapRequest(&http.Request{Host: "demo.test.fider.io" + testPort})
 	Expect(req1.IsCustomDomain()).IsFalse()
 
 	req2 := web.WrapRequest(&http.Request{Host: "demo.test.fider.io"})

@@ -8,7 +8,9 @@ export const fiderMock = {
         environment: "development",
         oauth: [],
       },
-      tenant: {},
+      tenant: {
+        locale: "en",
+      },
       user: undefined,
     })
   },
@@ -18,7 +20,9 @@ export const fiderMock = {
         environment: "development",
         oauth: [],
       },
-      tenant: {},
+      tenant: {
+        locale: "en",
+      },
       user: {
         name: "Jon Snow",
       },

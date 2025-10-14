@@ -18,6 +18,11 @@ Given("I prepare a {string} request to {string}", async function (this: FiderWor
   requestUrl = getFullUrl(this, url)
   requestHeaders = new Headers()
   
+  // Set Host header for tenant resolution in monolithic architecture
+  if (this.tenantName) {
+    requestHeaders.set("Host", `${this.tenantName}.test.fider.io`)
+  }
+  
   // Automatically include Bearer token authentication if access token is available
   if (this.accessToken) {
     requestHeaders.set("Authorization", `Bearer ${this.accessToken}`)
@@ -42,6 +47,11 @@ Given("I set the {string} header to {string}", async function (headerName: strin
 // Step definition for basic HTTP requests (no body)
 When("I send a {string} request to {string}", async function (this: FiderWorld, method: string, url: string) {
   const headers = new Headers()
+  
+  // Set Host header for tenant resolution in monolithic architecture
+  if (this.tenantName) {
+    headers.set("Host", `${this.tenantName}.test.fider.io`)
+  }
   
   // Automatically include Bearer token authentication if access token is available
   if (this.accessToken) {

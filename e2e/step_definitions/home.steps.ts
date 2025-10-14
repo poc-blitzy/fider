@@ -4,6 +4,11 @@ import { FiderWorld } from "../world.js"
 import { getLatestLinkSentTo } from "./fns.js"
 
 Given("I go to the home page", async function (this: FiderWorld) {
+  // Navigate to the home page with tenant-specific Host header
+  // This is required for the monolithic architecture to resolve the correct tenant
+  await this.page.setExtraHTTPHeaders({
+    Host: `${this.tenantName}.test.fider.io`,
+  })
   await this.page.goto(this.frontendUrl!)
 })
 
@@ -51,6 +56,10 @@ Given("I click submit your feedback", async function () {
 Given("I click on the confirmation link", async function (this: FiderWorld) {
   const userEmail = `$user-${this.tenantName}@fider.io`
   const activationLink = await getLatestLinkSentTo(userEmail)
+  // Navigate to the activation link with tenant-specific Host header
+  await this.page.setExtraHTTPHeaders({
+    Host: `${this.tenantName}.test.fider.io`,
+  })
   await this.page.goto(activationLink)
 })
 

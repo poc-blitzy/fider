@@ -11,11 +11,11 @@ let tenantName: string
 type BrowserName = "chromium" | "firefox" | "webkit"
 
 // Initialize URLs from environment variables with fallbacks for local testing
-// These URLs support cross-origin testing between separated frontend and backend
-// Backend defaults to localhost:8080 (where the Go server runs in tests)
-// Frontend defaults to localhost:3000 (for UI-based tests)
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000"
+// MONOLITHIC MODE: Frontend and backend both served from the same Go server
+// In the current monolithic architecture, the Go backend serves frontend static assets
+// Both frontend and backend use the same base URL (localhost:8080 in tests)
 const backendUrl = process.env.BACKEND_URL || "http://localhost:8080"
+const frontendUrl = process.env.FRONTEND_URL || backendUrl // Use backendUrl as fallback for monolithic mode
 
 console.log('[DEBUG] frontendUrl:', frontendUrl)
 console.log('[DEBUG] backendUrl:', backendUrl)
@@ -39,6 +39,7 @@ BeforeAll({ timeout: 30 * 1000 }, async function () {
   browser = await playwright[name].launch({
     headless: true,
     slowMo: 10,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   })
 
   if (!tenantName) {

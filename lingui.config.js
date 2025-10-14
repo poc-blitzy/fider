@@ -1,6 +1,6 @@
-import { formatter } from "@lingui/format-json"
+const { formatter } = require("@lingui/format-json");
 
-export default {
+module.exports = {
   catalogs: [
     {
       path: "<rootDir>/locale/{locale}/client",
@@ -14,4 +14,4 @@ export default {
   sourceLocale: "en",
   format: formatter({ style: "minimal", explicitIdAsDefault: true, sort: true }),
   locales: ["pt-BR", "es-ES", "nl", "sv-SE", "fr", "de", "en", "pl", "ru", "ja", "sk", "tr", "el", "it", "zh-CN", "ar", "fa"],
-}
+};

@@ -18,15 +18,22 @@ import (
 )
 
 type dbUser struct {
-	ID            sql.NullInt64  `db:"id"`
-	Name          sql.NullString `db:"name"`
-	Email         sql.NullString `db:"email"`
-	Tenant        *dbTenant      `db:"tenant"`
-	Role          sql.NullInt64  `db:"role"`
-	Status        sql.NullInt64  `db:"status"`
-	AvatarType    sql.NullInt64  `db:"avatar_type"`
-	AvatarBlobKey sql.NullString `db:"avatar_bkey"`
-	Providers     []*dbUserProvider
+	ID              sql.NullInt64  `db:"id"`
+	Name            sql.NullString `db:"name"`
+	Email           sql.NullString `db:"email"`
+	TenantID        sql.NullInt64  `db:"tenant.id"`
+	TenantName      sql.NullString `db:"tenant.name"`
+	TenantSubdomain sql.NullString `db:"tenant.subdomain"`
+	TenantCname     sql.NullString `db:"tenant.cname"`
+	TenantStatus    sql.NullInt64  `db:"tenant.status"`
+	TenantIsPrivate sql.NullBool   `db:"tenant.is_private"`
+	TenantLogoBKey  sql.NullString `db:"tenant.logo_bkey"`
+	TenantLocale    sql.NullString `db:"tenant.locale"`
+	Role            sql.NullInt64  `db:"role"`
+	Status          sql.NullInt64  `db:"status"`
+	AvatarType      sql.NullInt64  `db:"avatar_type"`
+	AvatarBlobKey   sql.NullString `db:"avatar_bkey"`
+	Providers       []*dbUserProvider
 }
 
 type dbUserProvider struct {
@@ -45,11 +52,25 @@ func (u *dbUser) toModel(ctx context.Context) *entity.User {
 		avatarURL = buildAvatarURL(ctx, avatarType, int(u.ID.Int64), u.Name.String, u.AvatarBlobKey.String)
 	}
 
+	var tenant *entity.Tenant
+	if u.TenantID.Valid && u.TenantID.Int64 != 0 {
+		tenant = &entity.Tenant{
+			ID:          int(u.TenantID.Int64),
+			Name:        u.TenantName.String,
+			Subdomain:   u.TenantSubdomain.String,
+			CNAME:       u.TenantCname.String,
+			Status:      enum.TenantStatus(u.TenantStatus.Int64),
+			IsPrivate:   u.TenantIsPrivate.Bool,
+			LogoBlobKey: u.TenantLogoBKey.String,
+			Locale:      u.TenantLocale.String,
+		}
+	}
+
 	user := &entity.User{
 		ID:            int(u.ID.Int64),
 		Name:          u.Name.String,
 		Email:         u.Email.String,
-		Tenant:        u.Tenant.toModel(),
+		Tenant:        tenant,
 		Role:          enum.Role(u.Role.Int64),
 		Providers:     make([]*entity.UserProvider, len(u.Providers)),
 		Status:        enum.UserStatus(u.Status.Int64),
@@ -324,7 +345,7 @@ func updateCurrentUser(ctx context.Context, c *cmd.UpdateCurrentUser) error {
 
 func getUserByID(ctx context.Context, q *query.GetUserByID) error {
 	return using(ctx, func(trx *dbx.Trx, tenant *entity.Tenant, user *entity.User) error {
-		u, err := queryUser(ctx, trx, "id = $1", q.UserID)
+		u, err := queryUser(ctx, trx, "u.id = $1", q.UserID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get user with id '%d'", q.UserID)
 		}
@@ -371,7 +392,7 @@ func getAllUsers(ctx context.Context, q *query.GetAllUsers) error {
 	return using(ctx, func(trx *dbx.Trx, tenant *entity.Tenant, user *entity.User) error {
 		var users []*dbUser
 		err := trx.Select(&users, `
-			SELECT id, name, email, tenant_id, role, status, avatar_type, avatar_bkey
+			SELECT id, name, email, tenant_id AS "tenant.id", role, status, avatar_type, avatar_bkey
 			FROM users 
 			WHERE tenant_id = $1 
 			AND status != $2
@@ -413,10 +434,10 @@ func getAllUsersNames(ctx context.Context, q *query.GetAllUsersNames) error {
 
 func queryUser(ctx context.Context, trx *dbx.Trx, filter string, args ...any) (*entity.User, error) {
 	user := dbUser{}
-	sql := fmt.Sprintf(`SELECT u.id, u.name, u.email, u.tenant_id, u.role, u.status, u.avatar_type, u.avatar_bkey,
-		t.id as "tenants.id", t.name as "tenants.name", t.subdomain as "tenants.subdomain", 
-		t.cname as "tenants.cname", t.status as "tenants.status", t.is_private as "tenants.is_private",
-		t.logo_bkey as "tenants.logo_bkey", t.locale as "tenants.locale", t.is_email_required as "tenants.is_email_required"
+	sql := fmt.Sprintf(`SELECT u.id, u.name, u.email, u.role, u.status, u.avatar_type, u.avatar_bkey,
+		t.id as "tenant.id", t.name as "tenant.name", t.subdomain as "tenant.subdomain", 
+		t.cname as "tenant.cname", t.status as "tenant.status", t.is_private as "tenant.is_private",
+		t.logo_bkey as "tenant.logo_bkey", t.locale as "tenant.locale"
 		FROM users u
 		LEFT JOIN tenants t ON t.id = u.tenant_id
 		WHERE u.status != %d AND `, enum.UserDeleted)

@@ -99,8 +99,9 @@ module.exports = {
     // Format for CI/CD systems
     format: [
       'progress',
-      'json:e2e-results/cucumber-report.json',
-      'junit:e2e-results/junit-report.xml'
+      'json:e2e-results/cucumber-report.json'
+      // Note: junit formatter removed - not available in @cucumber/cucumber@8.2.0
+      // Available formatters: json, message, html, progress, progress-bar, rerun, snippets, summary, usage, usage-json
     ],
     // Fail fast in CI
     failFast: true,

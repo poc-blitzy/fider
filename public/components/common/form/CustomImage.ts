@@ -1,7 +1,7 @@
 import { ImageUpload } from "@fider/models"
 import Image from "@tiptap/extension-image"
-import MarkdownIt from "markdown-it"
-import type { StateInline } from "markdown-it"
+import * as MarkdownIt from "markdown-it"
+import StateInline from "markdown-it/lib/rules_inline/state_inline"
 import { defaultMarkdownSerializer } from "prosemirror-markdown"
 
 export interface CustomImageOptions {

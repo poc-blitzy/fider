@@ -27,8 +27,7 @@ export const AsyncPage = (pageName: string) =>
   load(
     () =>
       import(
-        /* webpackInclude: /\.page.tsx$/ */
-        /* webpackChunkName: "[request]" */
-        `@fider/pages/${pageName}`
+        /* @vite-ignore */
+        `@fider/pages/${pageName}.page.tsx`
       )
   )

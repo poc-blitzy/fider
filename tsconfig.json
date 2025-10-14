@@ -10,6 +10,7 @@
     "strict": true,
     "jsx": "react",
     "lib": ["dom", "es2015.promise", "es6", "ES2020.Intl"],
+    "types": ["vite/client", "jest"],
     "baseUrl": ".",
     "noEmit": true,
     "noUnusedLocals": true,

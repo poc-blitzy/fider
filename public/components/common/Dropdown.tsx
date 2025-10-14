@@ -10,7 +10,7 @@ interface DropdownListItemProps {
   onClick?: () => void
   className?: string
   children: React.ReactNode
-  icon?: SpriteSymbol
+  icon?: SpriteSymbol | string
 }
 
 const ListItem = (props: DropdownListItemProps) => {

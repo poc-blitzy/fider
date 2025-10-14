@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/getfider/fider/app/pkg/bus"
@@ -17,21 +18,21 @@ import (
 )
 
 type dbTenant struct {
-	ID                 int    `db:"id"`
-	Name               string `db:"name"`
-	Subdomain          string `db:"subdomain"`
-	CNAME              string `db:"cname"`
-	Invitation         string `db:"invitation"`
-	WelcomeMessage     string `db:"welcome_message"`
-	Status             int    `db:"status"`
-	Locale             string `db:"locale"`
-	IsPrivate          bool   `db:"is_private"`
-	LogoBlobKey        string `db:"logo_bkey"`
-	CustomCSS          string `db:"custom_css"`
-	AllowedSchemes     string `db:"allowed_schemes"`
-	IsEmailAuthAllowed bool   `db:"is_email_auth_allowed"`
-	IsFeedEnabled      bool   `db:"is_feed_enabled"`
-	PreventIndexing    bool   `db:"prevent_indexing"`
+	ID                 sql.NullInt64  `db:"id"`
+	Name               sql.NullString `db:"name"`
+	Subdomain          sql.NullString `db:"subdomain"`
+	CNAME              sql.NullString `db:"cname"`
+	Invitation         sql.NullString `db:"invitation"`
+	WelcomeMessage     sql.NullString `db:"welcome_message"`
+	Status             sql.NullInt64  `db:"status"`
+	Locale             sql.NullString `db:"locale"`
+	IsPrivate          sql.NullBool   `db:"is_private"`
+	LogoBlobKey        sql.NullString `db:"logo_bkey"`
+	CustomCSS          sql.NullString `db:"custom_css"`
+	AllowedSchemes     sql.NullString `db:"allowed_schemes"`
+	IsEmailAuthAllowed sql.NullBool   `db:"is_email_auth_allowed"`
+	IsFeedEnabled      sql.NullBool   `db:"is_feed_enabled"`
+	PreventIndexing    sql.NullBool   `db:"prevent_indexing"`
 }
 
 func (t *dbTenant) toModel() *entity.Tenant {
@@ -40,21 +41,21 @@ func (t *dbTenant) toModel() *entity.Tenant {
 	}
 
 	tenant := &entity.Tenant{
-		ID:                 t.ID,
-		Name:               t.Name,
-		Subdomain:          t.Subdomain,
-		CNAME:              t.CNAME,
-		Invitation:         t.Invitation,
-		WelcomeMessage:     t.WelcomeMessage,
-		Status:             enum.TenantStatus(t.Status),
-		Locale:             t.Locale,
-		IsPrivate:          t.IsPrivate,
-		LogoBlobKey:        t.LogoBlobKey,
-		CustomCSS:          t.CustomCSS,
-		AllowedSchemes:     t.AllowedSchemes,
-		IsEmailAuthAllowed: t.IsEmailAuthAllowed,
-		IsFeedEnabled:      t.IsFeedEnabled,
-		PreventIndexing:    t.PreventIndexing,
+		ID:                 int(t.ID.Int64),
+		Name:               t.Name.String,
+		Subdomain:          t.Subdomain.String,
+		CNAME:              t.CNAME.String,
+		Invitation:         t.Invitation.String,
+		WelcomeMessage:     t.WelcomeMessage.String,
+		Status:             enum.TenantStatus(t.Status.Int64),
+		Locale:             t.Locale.String,
+		IsPrivate:          t.IsPrivate.Bool,
+		LogoBlobKey:        t.LogoBlobKey.String,
+		CustomCSS:          t.CustomCSS.String,
+		AllowedSchemes:     t.AllowedSchemes.String,
+		IsEmailAuthAllowed: t.IsEmailAuthAllowed.Bool,
+		IsFeedEnabled:      t.IsFeedEnabled.Bool,
+		PreventIndexing:    t.PreventIndexing.Bool,
 	}
 
 	return tenant

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "repository": "https://github.com/getfider/fider",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@lingui/format-json": "^5.1.2",
     "@lingui/react": "^5.1.2",
@@ -38,6 +39,7 @@
     "@lingui/cli": "^5.1.2",
     "@lingui/loader": "^5.1.2",
     "@lingui/macro": "^5.1.2",
+    "@lingui/vite-plugin": "^5.5.1",
     "@playwright/test": "1.48",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "5.16.4",
@@ -45,6 +47,7 @@
     "@types/debug": "4.1.7",
     "@types/dompurify": "2.3.3",
     "@types/jsdom": "16.2.14",
+    "@types/markdown-it": "^13.0.7",
     "@types/marked": "4.0.3",
     "@types/node": "^22.18.10",
     "@types/react": "^18.3.12",
@@ -52,6 +55,7 @@
     "@types/react-textarea-autosize": "4.3.6",
     "@typescript-eslint/eslint-plugin": "5.22.0",
     "@typescript-eslint/parser": "5.22.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "10.4.7",
     "babel-jest": "28.1.0",
     "babel-loader": "8.2.5",
@@ -79,6 +83,7 @@
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
+    "vite": "^5.4.20",
     "webpack": "5.94.0",
     "webpack-bundle-analyzer": "4.5.0",
     "webpack-cli": "4.9.2"
@@ -112,10 +117,15 @@
     "node": "21.x || 22.x"
   },
   "overrides": {
-    "@types/markdown-it": "14.1.2"
+    "@types/markdown-it": "^13.0.7"
   },
   "scripts": {
-    "heroku-postbuild": "make build-ssr && make build-ui",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint public --ext ts,tsx",
+    "type-check": "tsc --noEmit",
+    "heroku-postbuild": "npm run build",
     "build:e2e": "tsc -p tsconfig.e2e.json",
     "test:e2e": "npm run build:e2e && npx cucumber-js --config cucumber.cjs",
     "test:e2e:cors": "npm run build:e2e && API_ONLY_TESTS=true npx cucumber-js --config cucumber.cjs --profile cors",

@@ -39,5 +39,8 @@ Given("I sign in as {string}", async function (this: FiderWorld, userName: strin
   // Cross-origin flow: Backend authenticates user and issues JWT tokens upon activation
   // Frontend automatically stores access token and receives refresh token cookie
   const activationLink = await getLatestLinkSentTo(userEmail)
+  await this.page.setExtraHTTPHeaders({
+    Host: `${this.tenantName}.test.fider.io`,
+  })
   await this.page.goto(activationLink)
 })

@@ -1,6 +1,6 @@
 import Mention from "@tiptap/extension-mention"
-import MarkdownIt from "markdown-it"
-import type { StateInline } from "markdown-it"
+import * as MarkdownIt from "markdown-it"
+import StateInline from "markdown-it/lib/rules_inline/state_inline"
 
 export const CustomMention = Mention.extend({
   name: "mention",

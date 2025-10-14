@@ -16,7 +16,7 @@ interface InputProps {
   autoFocus?: boolean
   noTabFocus?: boolean
   afterLabel?: JSX.Element
-  icon?: SpriteSymbol
+  icon?: SpriteSymbol | string
   maxLength?: number
   value?: string
   disabled?: boolean

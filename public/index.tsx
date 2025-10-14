@@ -62,6 +62,5 @@ const bootstrapApp = (i18n: I18n) => {
   }
 }
 const fider = Fider.initialize()
-__webpack_nonce__ = fider.session.contextID
-__webpack_public_path__ = `${fider.settings.assetsURL}/assets/`
+// Note: Vite handles asset paths and CSP nonces automatically
 activateI18N(fider.currentLocale).then(bootstrapApp).catch(bootstrapApp)
