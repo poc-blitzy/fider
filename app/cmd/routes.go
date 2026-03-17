@@ -18,6 +18,9 @@ func routes(r *web.Engine) *web.Engine {
 
 	r.Get("/_health", handlers.Health())
 
+	// Global CORS middleware — handles cross-origin headers and OPTIONS preflight
+	// for the decoupled frontend SPA served from a separate origin
+	r.Use(middlewares.CORS())
 	r.Use(middlewares.CatchPanic())
 	r.Use(middlewares.Instrumentation())
 
@@ -37,13 +40,7 @@ func routes(r *web.Engine) *web.Engine {
 	r.Use(middlewares.Secure())
 	r.Use(middlewares.Compress())
 
-	assets := r.Group()
-	{
-		assets.Use(middlewares.CORS())
-		assets.Use(middlewares.ClientCache(365 * 24 * time.Hour))
-		assets.Get("/static/favicon", handlers.Favicon())
-		assets.Static("/assets/*filepath", "dist")
-	}
+	// Frontend assets are now served independently — see fider-frontend repository
 
 	feed := r.Group()
 	{
