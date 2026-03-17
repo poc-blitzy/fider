@@ -426,3 +426,203 @@ func TestUser_Impersonation_ValidUser(t *testing.T) {
 	Expect(status).Equals(http.StatusOK)
 	Expect(response.Body.String()).Equals("Arya Stark")
 }
+
+// Bearer JWT authentication tests — validate the cross-origin SPA authentication path
+// added as part of the monolith-to-decoupled architecture refactoring (AAP Goal 4).
+// These tests cover the three-tier auth precedence: Bearer JWT > Bearer API Key > Cookie JWT.
+
+func TestUser_BearerJWT_ValidToken(t *testing.T) {
+	RegisterT(t)
+
+	// Generate a valid JWT containing JonSnow's identity
+	token, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   mock.JonSnow.ID,
+		UserName: mock.JonSnow.Name,
+	})
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByID) error {
+		if q.UserID == mock.JonSnow.ID {
+			q.Result = mock.JonSnow
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://example.com/api/v1/posts").
+		AddHeader("Authorization", "Bearer "+token).
+		Execute(func(c *web.Context) error {
+			return c.String(http.StatusOK, c.User().Name)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Jon Snow")
+}
+
+func TestUser_BearerJWT_ValidToken_NonAPIPath(t *testing.T) {
+	RegisterT(t)
+
+	// Bearer JWT must work on all URL paths, not just /api/ paths.
+	// This is critical for cross-origin SPA requests to /_api/ endpoints.
+	token, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   mock.JonSnow.ID,
+		UserName: mock.JonSnow.Name,
+	})
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByID) error {
+		if q.UserID == mock.JonSnow.ID {
+			q.Result = mock.JonSnow
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://example.com/settings").
+		AddHeader("Authorization", "Bearer "+token).
+		Execute(func(c *web.Context) error {
+			return c.String(http.StatusOK, c.User().Name)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Jon Snow")
+}
+
+func TestUser_BearerJWT_InvalidToken_FallsToAPIKey(t *testing.T) {
+	RegisterT(t)
+
+	// When the Bearer token is not a valid JWT and the path starts with /api/,
+	// the middleware falls through to API key authentication.
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByAPIKey) error {
+		if q.APIKey == "not-a-valid-jwt-token" {
+			q.Result = mock.JonSnow
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://example.com/api/v1/posts").
+		AddHeader("Authorization", "Bearer not-a-valid-jwt-token").
+		Execute(func(c *web.Context) error {
+			return c.String(http.StatusOK, c.User().Name)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Jon Snow")
+}
+
+func TestUser_BearerJWT_EmptyToken_FallsToCookie(t *testing.T) {
+	RegisterT(t)
+
+	// An empty Bearer token (Authorization: "Bearer ") should be ignored,
+	// allowing the cookie-based auth fallback to handle authentication.
+	cookieToken, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   mock.JonSnow.ID,
+		UserName: mock.JonSnow.Name,
+	})
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByID) error {
+		if q.UserID == mock.JonSnow.ID {
+			q.Result = mock.JonSnow
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, response := server.
+		OnTenant(mock.DemoTenant).
+		AddHeader("Authorization", "Bearer ").
+		AddCookie(web.CookieAuthName, cookieToken).
+		Execute(func(c *web.Context) error {
+			return c.String(http.StatusOK, c.User().Name)
+		})
+
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Jon Snow")
+}
+
+func TestUser_BearerJWT_PrecedenceOverCookie(t *testing.T) {
+	RegisterT(t)
+
+	// When both a Bearer JWT and an auth cookie are present, the Bearer JWT
+	// must take precedence. This test verifies the correct auth priority by
+	// setting the Bearer JWT to JonSnow and the cookie to AryaStark.
+	bearerToken, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   mock.JonSnow.ID,
+		UserName: mock.JonSnow.Name,
+	})
+	cookieToken, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   mock.AryaStark.ID,
+		UserName: mock.AryaStark.Name,
+	})
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByID) error {
+		if q.UserID == mock.JonSnow.ID {
+			q.Result = mock.JonSnow
+			return nil
+		}
+		if q.UserID == mock.AryaStark.ID {
+			q.Result = mock.AryaStark
+			return nil
+		}
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, response := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://example.com/api/v1/posts").
+		AddHeader("Authorization", "Bearer "+bearerToken).
+		AddCookie(web.CookieAuthName, cookieToken).
+		Execute(func(c *web.Context) error {
+			return c.String(http.StatusOK, c.User().Name)
+		})
+
+	// Bearer JWT (JonSnow) must win over cookie (AryaStark)
+	Expect(status).Equals(http.StatusOK)
+	Expect(response.Body.String()).Equals("Jon Snow")
+}
+
+func TestUser_BearerJWT_UserNotFound(t *testing.T) {
+	RegisterT(t)
+
+	// When Bearer JWT is valid but references a non-existent user,
+	// the request continues unauthenticated (next(c) is called).
+	token, _ := jwt.Encode(jwt.FiderClaims{
+		UserID:   999,
+		UserName: "Ghost User",
+	})
+
+	bus.AddHandler(func(ctx context.Context, q *query.GetUserByID) error {
+		return app.ErrNotFound
+	})
+
+	server := mock.NewServer()
+	server.Use(middlewares.User())
+	status, _ := server.
+		OnTenant(mock.DemoTenant).
+		WithURL("http://example.com/api/v1/posts").
+		AddHeader("Authorization", "Bearer "+token).
+		Execute(func(c *web.Context) error {
+			if c.IsAuthenticated() {
+				return c.NoContent(http.StatusOK)
+			}
+			return c.NoContent(http.StatusNoContent)
+		})
+
+	// User not found — request continues unauthenticated
+	Expect(status).Equals(http.StatusNoContent)
+}

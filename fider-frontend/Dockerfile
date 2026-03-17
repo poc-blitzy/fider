@@ -30,6 +30,44 @@ ENV FIDER_PUBLIC_API_BASE_URL=${FIDER_PUBLIC_API_BASE_URL}
 # The FIDER_PUBLIC_API_BASE_URL env var is consumed by webpack's DefinePlugin.
 RUN npm run build
 
+# Generate index.html by reading webpack's dist/assets.json manifest.
+# In the original monorepo, Go's renderer.go reads dist/assets.json at runtime
+# to inject content-hashed <script> and <link> tags into HTML templates (views/index.html).
+# In standalone SPA mode, this build-time script performs the same function,
+# producing a static index.html with the correct asset references.
+RUN node -e ' \
+var fs = require("fs"); \
+var stats = JSON.parse(fs.readFileSync("dist/assets.json", "utf8")); \
+var mainAssets = stats.entrypoints.main.assets.filter(function(a) { return !a.name.endsWith(".map"); }); \
+var cssLinks = mainAssets.filter(function(a) { return a.name.endsWith(".css"); }).map(function(a) { return "  <link rel=\"stylesheet\" href=\"/assets/" + a.name + "\">"; }).join("\n"); \
+var jsScripts = mainAssets.filter(function(a) { return a.name.endsWith(".js"); }).map(function(a) { return "  <script defer src=\"/assets/" + a.name + "\"></script>"; }).join("\n"); \
+var lines = [ \
+  "<!DOCTYPE html>", \
+  "<html lang=\"en\" dir=\"ltr\" data-theme=\"light\">", \
+  "<head>", \
+  "  <meta charset=\"utf-8\" />", \
+  "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />", \
+  "  <title>Fider</title>", \
+  cssLinks, \
+  "</head>", \
+  "<body>", \
+  "  <noscript class=\"container page\">", \
+  "    <div class=\"mt-8\">", \
+  "      <h2 class=\"text-display2\">Please enable JavaScript</h2>", \
+  "      <p>This website requires JavaScript, please enable and reload the page.</p>", \
+  "    </div>", \
+  "  </noscript>", \
+  "  <div id=\"root\"></div>", \
+  "  <div id=\"root-modal\"></div>", \
+  "  <div id=\"root-toastify\"></div>", \
+  jsScripts, \
+  "</body>", \
+  "</html>" \
+]; \
+fs.writeFileSync("index.html", lines.join("\n")); \
+console.log("Generated index.html with " + mainAssets.length + " webpack assets"); \
+'
+
 #####################
 ### Runtime Step
 #####################
@@ -72,31 +110,13 @@ server {
 }
 EOF
 
-# Create a minimal SPA shell HTML.
-# In the monorepo, the Go backend served this shell via views/base.html and views/index.html
-# with server-injected data. In standalone SPA mode, public/services/fider.ts is updated to
-# handle the case where the #server-data element does not exist.
-# The SPA mounts into #root; #root-modal and #root-toastify are used by overlay components.
-RUN printf '%s\n' \
-  '<!DOCTYPE html>' \
-  '<html lang="en" dir="ltr" data-theme="light">' \
-  '<head>' \
-  '  <meta charset="utf-8" />' \
-  '  <meta name="viewport" content="width=device-width, initial-scale=1" />' \
-  '  <title>Fider</title>' \
-  '</head>' \
-  '<body>' \
-  '  <noscript class="container page">' \
-  '    <div class="mt-8">' \
-  '      <h2 class="text-display2">Please enable JavaScript</h2>' \
-  '      <p>This website requires JavaScript, please enable and reload the page.</p>' \
-  '    </div>' \
-  '  </noscript>' \
-  '  <div id="root"></div>' \
-  '  <div id="root-modal"></div>' \
-  '  <div id="root-toastify"></div>' \
-  '</body>' \
-  '</html>' > /usr/share/nginx/html/index.html
+# Copy the generated index.html from the builder stage.
+# In the monorepo, Go's app/pkg/web/renderer.go read dist/assets.json at runtime to
+# inject content-hashed <script> and <link> tags into HTML templates (views/index.html).
+# In standalone SPA mode, a build-time Node.js script in the builder stage reads the same
+# assets.json and generates a complete static index.html with the correct asset references.
+# This ensures webpack's content-hashed bundles are correctly loaded by the browser.
+COPY --from=builder /app/index.html /usr/share/nginx/html/index.html
 
 EXPOSE 80
 

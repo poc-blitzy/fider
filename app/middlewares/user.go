@@ -28,7 +28,17 @@ func User() web.MiddlewareFunc {
 				user  *entity.User
 			)
 
-			// Bearer JWT authentication — supports cross-origin SPA requests
+			// Authentication precedence (highest to lowest):
+			//  1. Bearer JWT (Authorization header) — cross-origin SPA requests
+			//  2. Bearer API Key (Authorization header, /api/ paths only) — programmatic access
+			//  3. Cookie JWT (auth cookie) — same-origin browser requests
+			//
+			// When a Bearer token is present, it is tried as JWT first. If JWT decode fails
+			// and the request targets an /api/ path, the token is tried as an API key.
+			// Cookie-based auth is only attempted when no Bearer token is present or the
+			// Bearer token is empty. This ensures that an explicitly provided Bearer token
+			// always takes precedence over ambient cookie credentials, preventing
+			// unintentional authentication via cookies on cross-origin requests.
 			authHeader := c.Request.GetHeader("Authorization")
 			parts := strings.Split(authHeader, "Bearer")
 			if len(parts) == 2 {

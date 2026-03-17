@@ -54,7 +54,7 @@ npm run build
 
 This outputs the compiled SPA to the `dist/` directory.
 
-> **Note:** The development server proxies API requests to the backend. Ensure the backend API is running at the configured `FIDER_PUBLIC_API_BASE_URL`.
+> **Note:** The SPA communicates with the backend API via cross-origin requests (CORS). There is no development server proxy — the backend must be running with CORS enabled (see backend `ALLOWED_ORIGINS` configuration) and accessible at the URL configured in `FIDER_PUBLIC_API_BASE_URL`.
 
 ## Docker Build
 
