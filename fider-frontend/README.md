@@ -58,7 +58,17 @@ This outputs the compiled SPA to the `dist/` directory.
 
 ## Docker Build
 
-### Build the Docker Image
+### Build from Monorepo
+
+When building from the monorepo root, use `-f` to specify the frontend Dockerfile. Docker BuildKit automatically uses `fider-frontend/Dockerfile.dockerignore` instead of the root `.dockerignore`, ensuring all frontend source files are included in the build context:
+
+```sh
+docker build -t fider-frontend -f fider-frontend/Dockerfile --build-arg FIDER_PUBLIC_API_BASE_URL=https://api.your-domain.com .
+```
+
+### Build from Standalone Repository
+
+When the frontend is extracted into its own repository, build from the repository root:
 
 ```sh
 docker build -t fider-frontend --build-arg FIDER_PUBLIC_API_BASE_URL=https://api.your-domain.com .
