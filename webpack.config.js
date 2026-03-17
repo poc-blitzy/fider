@@ -7,6 +7,7 @@ const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin")
 const PurgecssPlugin = require("purgecss-webpack-plugin")
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const BundleAnalyzerPlugin = require("webpack-bundle-analyzer").BundleAnalyzerPlugin
+const webpack = require("webpack")
 const publicFolder = path.resolve(__dirname, "public")
 const localeFolder = path.resolve(__dirname, "locale")
 
@@ -30,6 +31,12 @@ const plugins = [
       chunkGroups: true,
       modules: false,
     },
+  }),
+  // Inject API base URL for cross-origin SPA mode
+  new webpack.DefinePlugin({
+    __FIDER_CONFIG__: JSON.stringify({
+      apiHost: process.env.FIDER_PUBLIC_API_BASE_URL || "",
+    }),
   }),
 ]
 
