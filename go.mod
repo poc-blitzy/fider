@@ -28,9 +28,6 @@ require (
 	golang.org/x/oauth2 v0.15.0
 )
 
-// NOTE: Run `go mod tidy` after all SSR code removal is complete (e.g., app/pkg/web/react.go deletion)
-// to clean up indirect dependencies that were only required by the removed rogchap.com/v8go dependency.
-
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
 	4d63.com/gochecknoglobals v0.2.1 // indirect

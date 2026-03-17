@@ -29,7 +29,7 @@ build-server: ## Build server
 
 ##@ Testing
 
-test: test-server test-ui ## Test server and ui code
+test: test-server ## Test server code
 
 test-server: build-server ## Run all server tests
 	godotenv -f .test.env ./fider migrate
