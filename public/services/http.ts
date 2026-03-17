@@ -47,11 +47,13 @@ async function request<T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE"
     ["Content-Type", "application/json"],
   ]
   try {
-    const response = await fetch(url, {
+    // Prepend configurable API base URL for cross-origin SPA mode
+    const response = await fetch(__FIDER_CONFIG__.apiHost + url, {
       method,
       headers,
       body: JSON.stringify(body),
-      credentials: "same-origin",
+      // "include" enables cross-origin cookie support (required for decoupled SPA)
+      credentials: "include",
     })
     return await toResult<T>(response)
   } catch (err) {
