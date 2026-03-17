@@ -28,69 +28,93 @@ func User() web.MiddlewareFunc {
 				user  *entity.User
 			)
 
-			cookie, err := c.Request.Cookie(web.CookieAuthName)
-			if err == nil {
-				token = cookie.Value
-			} else {
-				token = webutil.GetSignUpAuthCookie(c)
-				if token != "" {
-					webutil.AddAuthTokenCookie(c, token)
-				}
-			}
-
-			if token != "" {
-				claims, err := jwt.DecodeFiderClaims(token)
-				if err != nil {
-					c.RemoveCookie(web.CookieAuthName)
-					return next(c)
-				}
-
-				userByClaimsID := &query.GetUserByID{UserID: claims.UserID}
-				err = bus.Dispatch(c, userByClaimsID)
-				user = userByClaimsID.Result
-				if err != nil {
-					if errors.Cause(err) == app.ErrNotFound {
-						c.RemoveCookie(web.CookieAuthName)
-						return next(c)
-					}
-					return err
-				}
-			} else if c.Request.IsAPI() {
-				authHeader := c.Request.GetHeader("Authorization")
-				parts := strings.Split(authHeader, "Bearer")
-				if len(parts) == 2 {
-					apiKey := strings.TrimSpace(parts[1])
-					getUserByAPIKey := &query.GetUserByAPIKey{APIKey: apiKey}
-					err = bus.Dispatch(c, getUserByAPIKey)
-					if err != nil {
-						if errors.Cause(err) == app.ErrNotFound {
-							return c.HandleValidation(validate.Failed("API Key is invalid"))
-						}
-						return err
-					}
-					user = getUserByAPIKey.Result
-
-					if !user.IsCollaborator() {
-						return c.HandleValidation(validate.Failed("API Key is invalid"))
-					}
-
-					if impersonateUserIDStr := c.Request.GetHeader("X-Fider-UserID"); impersonateUserIDStr != "" {
-						if !user.IsAdministrator() {
-							return c.HandleValidation(validate.Failed("Only Administrators are allowed to impersonate another user"))
-						}
-						impersonateUserID, err := strconv.Atoi(impersonateUserIDStr)
-						if err != nil {
-							return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
-						}
-						userByImpersonateID := &query.GetUserByID{UserID: impersonateUserID}
-						err = bus.Dispatch(c, userByImpersonateID)
-						user = userByImpersonateID.Result
+			// Bearer JWT authentication — supports cross-origin SPA requests
+			authHeader := c.Request.GetHeader("Authorization")
+			parts := strings.Split(authHeader, "Bearer")
+			if len(parts) == 2 {
+				bearerToken := strings.TrimSpace(parts[1])
+				if bearerToken != "" {
+					// Try JWT decode first — enables cross-origin SPA authentication
+					claims, jwtErr := jwt.DecodeFiderClaims(bearerToken)
+					if jwtErr == nil {
+						// JWT is valid — resolve user by claims
+						userByClaimsID := &query.GetUserByID{UserID: claims.UserID}
+						err := bus.Dispatch(c, userByClaimsID)
+						user = userByClaimsID.Result
 						if err != nil {
 							if errors.Cause(err) == app.ErrNotFound {
-								return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+								// JWT contains a valid token but user not found
+								return next(c)
 							}
 							return err
 						}
+					} else if c.Request.IsAPI() {
+						// Bearer API key authentication — supports programmatic API access (Collaborator+ only)
+						getUserByAPIKey := &query.GetUserByAPIKey{APIKey: bearerToken}
+						err := bus.Dispatch(c, getUserByAPIKey)
+						if err != nil {
+							if errors.Cause(err) == app.ErrNotFound {
+								return c.HandleValidation(validate.Failed("API Key is invalid"))
+							}
+							return err
+						}
+						user = getUserByAPIKey.Result
+
+						if !user.IsCollaborator() {
+							return c.HandleValidation(validate.Failed("API Key is invalid"))
+						}
+
+						// Admin impersonation via X-Fider-UserID header (API key auth only)
+						if impersonateUserIDStr := c.Request.GetHeader("X-Fider-UserID"); impersonateUserIDStr != "" {
+							if !user.IsAdministrator() {
+								return c.HandleValidation(validate.Failed("Only Administrators are allowed to impersonate another user"))
+							}
+							impersonateUserID, err := strconv.Atoi(impersonateUserIDStr)
+							if err != nil {
+								return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+							}
+							userByImpersonateID := &query.GetUserByID{UserID: impersonateUserID}
+							err = bus.Dispatch(c, userByImpersonateID)
+							user = userByImpersonateID.Result
+							if err != nil {
+								if errors.Cause(err) == app.ErrNotFound {
+									return c.HandleValidation(validate.Failed(fmt.Sprintf("User not found for given impersonate UserID '%s'", impersonateUserIDStr)))
+								}
+								return err
+							}
+						}
+					}
+				}
+			}
+
+			// Cookie JWT authentication — supports same-origin browser requests
+			if user == nil {
+				cookie, err := c.Request.Cookie(web.CookieAuthName)
+				if err == nil {
+					token = cookie.Value
+				} else {
+					token = webutil.GetSignUpAuthCookie(c)
+					if token != "" {
+						webutil.AddAuthTokenCookie(c, token)
+					}
+				}
+
+				if token != "" {
+					claims, err := jwt.DecodeFiderClaims(token)
+					if err != nil {
+						c.RemoveCookie(web.CookieAuthName)
+						return next(c)
+					}
+
+					userByClaimsID := &query.GetUserByID{UserID: claims.UserID}
+					err = bus.Dispatch(c, userByClaimsID)
+					user = userByClaimsID.Result
+					if err != nil {
+						if errors.Cause(err) == app.ErrNotFound {
+							c.RemoveCookie(web.CookieAuthName)
+							return next(c)
+						}
+						return err
 					}
 				}
 			}
