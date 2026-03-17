@@ -18,7 +18,9 @@ func Secure() web.MiddlewareFunc {
 			if cdnHost != "" && !env.IsSingleHostMode() {
 				cdnHost = "*." + cdnHost
 			}
-			csp := fmt.Sprintf(web.CspPolicyTemplate, c.ContextID(), cdnHost)
+			// Third argument supplies the frontend origin for cross-origin CSP directives
+			// (added as part of the monorepo-to-decoupled-architecture refactor)
+			csp := fmt.Sprintf(web.CspPolicyTemplate, c.ContextID(), cdnHost, env.Config.FrontendBaseURL)
 
 			c.Response.Header().Set("Content-Security-Policy", strings.TrimSpace(csp))
 			c.Response.Header().Set("X-XSS-Protection", "1; mode=block")
