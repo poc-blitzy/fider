@@ -55,6 +55,47 @@ export class FiderImpl {
 
     const el = document.getElementById("server-data")
     const data = el ? JSON.parse(el.textContent || el.innerText) : {}
+    // In standalone SPA mode, provide default settings when server-injected data is unavailable
+    if (!data.settings) {
+      data.settings = {
+        mode: "single",
+        locale: "en",
+        version: "",
+        environment: "production",
+        domain: "",
+        hasLegal: false,
+        isBillingEnabled: false,
+        baseURL: __FIDER_CONFIG__.apiHost || window.location.origin,
+        assetsURL: "",
+        oauth: [],
+        postWithTags: false,
+        allowAllowedSchemes: false,
+      }
+    }
+    if (!data.page) {
+      // In standalone SPA mode, determine the page from the URL path
+      data.page = "Home/Home.page"
+    }
+    if (!data.contextID) {
+      data.contextID = ""
+    }
+    if (!data.tenant) {
+      data.tenant = {
+        id: 0,
+        name: "",
+        cname: "",
+        subdomain: "",
+        locale: "en",
+        invitation: "",
+        welcomeMessage: "",
+        status: 1,
+        isPrivate: false,
+        logoBlobKey: "",
+        allowedSchemes: "",
+        isEmailAuthAllowed: true,
+        isFeedEnabled: false,
+      }
+    }
     this.pSettings = data.settings
     this.pSession = new FiderSession(data)
     return this
