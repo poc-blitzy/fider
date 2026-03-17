@@ -31,6 +31,8 @@ interface SpriteSymbol {
 
 declare let __webpack_nonce__: string
 declare let __webpack_public_path__: string
+// Build-time configuration injected by webpack DefinePlugin for cross-origin SPA mode
+declare const __FIDER_CONFIG__: { apiHost: string }
 
 declare module "*.svg" {
   const content: SpriteSymbol

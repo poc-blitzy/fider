@@ -1,3 +1,5 @@
+// LinguiJS catalog configuration
+// Paths use <rootDir> which resolves to the repository root
 import { formatter } from "@lingui/format-json"
 
 export default {

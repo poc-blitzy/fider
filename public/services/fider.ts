@@ -55,6 +55,61 @@ export class FiderImpl {
 
     const el = document.getElementById("server-data")
     const data = el ? JSON.parse(el.textContent || el.innerText) : {}
+
+    // Extract JWT token from OAuth redirect URL for cross-origin authentication.
+    // After OAuth sign-in, the backend redirects to FRONTEND_BASE_URL?token=<jwt>.
+    // The token is stored in localStorage for use as a Bearer token in API requests.
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectToken = urlParams.get("token")
+    if (redirectToken) {
+      localStorage.setItem("fider_auth_token", redirectToken)
+      // Remove token from URL to prevent exposure in browser history and server logs
+      const cleanURL = new URL(window.location.href)
+      cleanURL.searchParams.delete("token")
+      window.history.replaceState({}, document.title, cleanURL.pathname + cleanURL.search + cleanURL.hash)
+    }
+
+    // In standalone SPA mode, provide default settings when server-injected data is unavailable
+    if (!data.settings) {
+      data.settings = {
+        mode: "single",
+        locale: "en",
+        version: "",
+        environment: "production",
+        domain: "",
+        hasLegal: false,
+        isBillingEnabled: false,
+        baseURL: __FIDER_CONFIG__.apiHost || window.location.origin,
+        assetsURL: "",
+        oauth: [],
+        postWithTags: false,
+        allowAllowedSchemes: false,
+      }
+    }
+    if (!data.page) {
+      // In standalone SPA mode, determine the page from the URL path
+      data.page = "Home/Home.page"
+    }
+    if (!data.contextID) {
+      data.contextID = ""
+    }
+    if (!data.tenant) {
+      data.tenant = {
+        id: 0,
+        name: "",
+        cname: "",
+        subdomain: "",
+        locale: "en",
+        invitation: "",
+        welcomeMessage: "",
+        status: 1,
+        isPrivate: false,
+        logoBlobKey: "",
+        allowedSchemes: "",
+        isEmailAuthAllowed: true,
+        isFeedEnabled: false,
+      }
+    }
     this.pSettings = data.settings
     this.pSession = new FiderSession(data)
     return this

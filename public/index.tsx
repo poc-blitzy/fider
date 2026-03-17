@@ -61,7 +61,10 @@ const bootstrapApp = (i18n: I18n) => {
     )
   }
 }
+// Initialize Fider - in standalone SPA mode, server-injected data may not be available
 const fider = Fider.initialize()
-__webpack_nonce__ = fider.session.contextID
-__webpack_public_path__ = `${fider.settings.assetsURL}/assets/`
+// In standalone SPA mode, contextID may not be available from server data
+__webpack_nonce__ = fider.session?.contextID || ""
+// In standalone SPA mode, assetsURL may not be available from server data; default to local assets path
+__webpack_public_path__ = fider.settings?.assetsURL ? `${fider.settings.assetsURL}/assets/` : `/assets/`
 activateI18N(fider.currentLocale).then(bootstrapApp).catch(bootstrapApp)

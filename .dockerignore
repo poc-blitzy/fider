@@ -1,3 +1,8 @@
+# Backend-only Docker build context
+# Excludes frontend source, build tooling, and dev artifacts
+# that are not needed for the Go backend Docker image.
+
+# Existing exclusions
 node_modules
 tests
 data
@@ -7,3 +12,25 @@ cover.out
 scripts
 .env
 dist
+
+# Frontend source code (served independently)
+public/
+e2e/
+fider-frontend/
+
+# Frontend build and config files
+webpack.config.js
+esbuild.config.js
+esbuild-shim.js
+tsconfig.json
+lingui.config.js
+index.d.ts
+
+# npm manifests (not used in backend build)
+package.json
+package-lock.json
+
+# Frontend linting and formatting config
+.eslintrc.js
+.eslintignore
+.prettierrc

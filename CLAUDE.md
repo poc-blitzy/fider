@@ -6,24 +6,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Building
 
-- `make build` - Build both server and UI
+- `make build` - Build server binary (backend only)
 - `make build-server` - Build Go server binary
-- `make build-ui` - Build UI assets with webpack
-- `make build-ssr` - Build SSR script and compile locales
+
+> **Note:** Frontend is built independently — see the fider-frontend repository.
 
 ### Running
 
 - `make run` - Run Fider server (requires build first)
-- `make watch` - Start both server and UI in watch mode (recommended for development)
+- `make watch` - Start server in watch mode (recommended for backend development)
 - `make watch-server` - Run server in watch mode with air
-- `make watch-ui` - Run UI in watch mode with webpack
 - `make migrate` - Run database migrations
+
+> **Note:** Frontend dev server is managed separately in the fider-frontend repository.
 
 ### Testing
 
-- `make test` - Run both server and UI tests
+- `make test` - Run server tests
 - `make test-server` - Run Go server tests (includes migration)
-- `make test-ui` - Run Jest tests for React components
+- `make test-ui` - Run Jest tests for React components (during transition)
 - `make coverage-server` - Run server tests with coverage
 - `make test-e2e-server` - Run E2E tests for server features
 - `make test-e2e-ui` - Run E2E tests for UI features
@@ -62,6 +63,8 @@ Fider uses a layered architecture with clean separation of concerns:
 - **CQRS**: Commands and queries are separated in `app/models/`
 - **Service Layer**: All external services (email, blob storage, oauth) are abstracted
 - **Middleware Chain**: Authentication, tenant resolution, CORS, etc.
+- **CORS Middleware**: Full cross-origin support with origin allowlist via `ALLOWED_ORIGINS`
+- **Dual Authentication**: Cookie-based JWT (same-origin) + Bearer JWT header (cross-origin SPA)
 
 **Database:**
 
@@ -71,7 +74,7 @@ Fider uses a layered architecture with clean separation of concerns:
 
 ### Frontend (React/TypeScript)
 
-Modern React application with TypeScript:
+The frontend React application is now maintained in a separate repository (fider-frontend):
 
 **Structure:**
 
@@ -83,7 +86,7 @@ Modern React application with TypeScript:
 
 **Key Features:**
 
-- **SSR Support**: Server-side rendering with hydration
+- **Standalone SPA**: Runs independently with configurable API backend URL
 - **Internationalization**: LinguiJS for i18n with locale switching
 - **Component Library**: Extensive set of reusable components
 - **State Management**: React Context for global state
@@ -92,9 +95,9 @@ Modern React application with TypeScript:
 **Build System:**
 
 - Webpack for bundling with CSS extraction
-- ESBuild for SSR compilation
 - SCSS for styling with utility classes
 - Asset optimization and code splitting
+- API calls route through centralized http.ts with configurable base URL
 
 ### API Design
 
@@ -118,17 +121,23 @@ The application includes pluggable services for:
 ## Development Setup Requirements
 
 1. **Go 1.22+** - Backend development
-2. **Node.js 21/22** - Frontend build tools and TypeScript
-3. **Docker** - PostgreSQL and local SMTP (MailHog)
-4. **Air** - Go hot reload: `go install github.com/cosmtrek/air`
-5. **Godotenv** - Environment loading: `go install github.com/joho/godotenv/cmd/godotenv`
-6. **golangci-lint** - Go linting: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1`
+2. **Docker** - PostgreSQL and local SMTP (MailHog)
+3. **Air** - Go hot reload: `go install github.com/cosmtrek/air`
+4. **Godotenv** - Environment loading: `go install github.com/joho/godotenv/cmd/godotenv`
+5. **golangci-lint** - Go linting: `go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1`
+
+> **Note:** The backend no longer requires Node.js for its own build, but Node.js is still needed if building the frontend locally.
 
 **Environment Setup:**
 
 - Copy `.example.env` to `.env` for local configuration
 - Run `docker compose up -d` for PostgreSQL and MailHog
 - MailHog UI available at http://localhost:8025
+
+**New Environment Variables (for decoupled architecture):**
+
+- `ALLOWED_ORIGINS` — CORS origin allowlist (comma-separated, e.g. `http://localhost:3001`)
+- `FRONTEND_BASE_URL` — Frontend SPA URL for OAuth redirects (e.g. `http://localhost:3001`)
 
 ## Testing Strategy
 
@@ -202,14 +211,14 @@ Fider uses BEM methodology combined with utility classes:
 
 **Local Development:**
 
-- `make watch` for development with hot reload
-- Webpack dev server for fast UI rebuilds
+- `make watch` for backend development with hot reload
 - Air for Go server hot reload
 
 **Production Build:**
 
-- `make build` creates optimized binaries and assets
-- SSR compilation for better SEO and performance
-- Asset optimization and minification
+- `make build` creates optimized server binary
+- Asset optimization is handled by the frontend repository independently
+
+> **Note:** Frontend and backend are deployed independently. See CORS and auth configuration for cross-origin setup.
 
 This is a mature, production-ready feedback platform with comprehensive testing, i18n support, and a clean, maintainable architecture.

@@ -1,0 +1,10 @@
+# Frontend Docker build context exclusions
+node_modules
+dist
+.env
+.git
+.github
+e2e
+*.log
+coverage
+.DS_Store

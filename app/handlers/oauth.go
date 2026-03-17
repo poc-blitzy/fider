@@ -17,6 +17,7 @@ import (
 	"github.com/getfider/fider/app/pkg/bus"
 
 	"github.com/getfider/fider/app"
+	"github.com/getfider/fider/app/pkg/env"
 	"github.com/getfider/fider/app/pkg/errors"
 	"github.com/getfider/fider/app/pkg/jwt"
 	"github.com/getfider/fider/app/pkg/log"
@@ -140,6 +141,23 @@ func OAuthToken() web.HandlerFunc {
 
 		webutil.AddAuthUserCookie(c, user)
 
+		// Redirect to frontend SPA with JWT token for cross-origin authentication
+		if env.Config.FrontendBaseURL != "" {
+			token, err := jwt.Encode(jwt.FiderClaims{
+				UserID:    user.ID,
+				UserName:  user.Name,
+				UserEmail: user.Email,
+				Origin:    jwt.FiderClaimsOriginUI,
+				Metadata: jwt.Metadata{
+					ExpiresAt: jwt.Time(time.Now().Add(365 * 24 * time.Hour)),
+				},
+			})
+			if err != nil {
+				return c.Failure(err)
+			}
+			return c.Redirect(env.Config.FrontendBaseURL + "?token=" + token)
+		}
+
 		return c.Redirect(redirectURL.String())
 	}
 }
@@ -214,6 +232,16 @@ func OAuthCallback() web.HandlerFunc {
 				return c.Failure(err)
 			}
 
+			// Support both same-origin (cookie) and cross-origin (Bearer token) auth flows
+			if env.Config.FrontendBaseURL != "" {
+				frontendURL, _ := url.ParseRequestURI(env.Config.FrontendBaseURL)
+				frontendURL.Path = "/signup"
+				var q = frontendURL.Query()
+				q.Set("token", token)
+				frontendURL.RawQuery = q.Encode()
+				return c.Redirect(frontendURL.String())
+			}
+
 			var query = redirectURL.Query()
 			query.Set("token", token)
 			redirectURL.RawQuery = query.Encode()
@@ -221,6 +249,19 @@ func OAuthCallback() web.HandlerFunc {
 		}
 
 		//Sign in process
+		// Redirect to frontend SPA with JWT token for cross-origin authentication
+		if env.Config.FrontendBaseURL != "" {
+			// Token exchange route (/oauth/:provider/token) is on the backend
+			backendURL, _ := url.ParseRequestURI(c.BaseURL())
+			var q = backendURL.Query()
+			q.Set("code", code)
+			q.Set("redirect", redirectURL.String())
+			q.Set("identifier", claims.Identifier)
+			backendURL.RawQuery = q.Encode()
+			backendURL.Path = fmt.Sprintf("/oauth/%s/token", provider)
+			return c.Redirect(backendURL.String())
+		}
+
 		var query = redirectURL.Query()
 		query.Set("code", code)
 		query.Set("redirect", redirectURL.RequestURI())
@@ -242,8 +283,13 @@ func SignInByOAuth() web.HandlerFunc {
 
 		if redirect == "" {
 			redirect = c.BaseURL()
-		} else if redirect != c.BaseURL() && !strings.HasPrefix(redirect, c.BaseURL()+"/") {
-			return c.Forbidden()
+		} else {
+			isValidBackend := redirect == c.BaseURL() || strings.HasPrefix(redirect, c.BaseURL()+"/")
+			isValidFrontend := env.Config.FrontendBaseURL != "" && (redirect == env.Config.FrontendBaseURL || strings.HasPrefix(redirect, env.Config.FrontendBaseURL+"/"))
+			// Support both same-origin (cookie) and cross-origin (Bearer token) auth flows
+			if !isValidBackend && !isValidFrontend {
+				return c.Forbidden()
+			}
 		}
 
 		redirectURL, _ := url.ParseRequestURI(redirect)

@@ -1,0 +1,63 @@
+# Monorepo-context .dockerignore for the frontend Dockerfile.
+# Docker BuildKit automatically uses this file (instead of the root .dockerignore)
+# when building with: docker build -f fider-frontend/Dockerfile .
+#
+# This is needed because the root .dockerignore excludes frontend source files
+# (package.json, public/, webpack.config.js, etc.) for the backend-only Docker build,
+# which prevents the frontend Dockerfile from accessing its required source files.
+#
+# When the frontend is extracted into its own repository, the standard
+# fider-frontend/.dockerignore will be used instead and this file becomes unnecessary.
+
+# Go backend source (not needed for frontend build)
+app/
+migrations/
+views/
+main.go
+go.mod
+go.sum
+tools.go
+Makefile
+
+# Backend Docker and deploy files
+Dockerfile
+docker-compose.yml
+Procfile
+air.conf
+fider-frontend/
+
+# Node.js build artifacts (rebuilt in Docker)
+node_modules
+dist
+
+# Environment and secrets
+.env
+.test.env
+.example.env
+
+# Dev/CI/VCS files
+.git
+.github
+e2e/
+scripts/
+etc/
+cover.out
+tests
+data
+output
+
+# SSR files (removed in refactor, should not exist)
+esbuild.config.js
+esbuild-shim.js
+ssr.js
+public/ssr.tsx
+
+# Documentation (not needed for build)
+*.md
+LICENSE
+
+# OS and IDE artifacts
+.DS_Store
+*.log
+coverage
+blitzy/

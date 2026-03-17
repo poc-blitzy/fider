@@ -108,35 +108,6 @@ func TestRenderer_Home(t *testing.T) {
 	compareRendererResponse(buf, "/app/pkg/web/testdata/home.html", ctx)
 }
 
-func TestRenderer_Home_SSR(t *testing.T) {
-	RegisterT(t)
-
-	bus.AddHandler(func(ctx context.Context, q *query.ListActiveOAuthProviders) error {
-		return nil
-	})
-
-	buf := new(bytes.Buffer)
-	ctx := newGetContext("https://demo.test.fider.io:3000/", map[string]string{
-		"User-Agent": "Googlebot",
-	})
-	ctx.SetTenant(&entity.Tenant{
-		Locale: "en",
-	})
-	renderer := web.NewRenderer()
-	renderer.Render(buf, http.StatusOK, web.Props{
-		Page:        "Test.page",
-		Title:       "My Page Title",
-		Description: "My Page Description",
-		Data: web.Map{
-			"posts":          make([]web.Map, 0),
-			"tags":           make([]web.Map, 0),
-			"countPerStatus": web.Map{},
-		},
-	}, ctx)
-
-	compareRendererResponse(buf, "/app/pkg/web/testdata/home_ssr.html", ctx)
-}
-
 func TestRenderer_AuthenticatedUser(t *testing.T) {
 	RegisterT(t)
 
