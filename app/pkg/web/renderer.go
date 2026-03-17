@@ -47,10 +47,10 @@ type Renderer struct {
 	assets        *clientAssets
 	chunkedAssets map[string]*clientAssets
 	mutex         sync.RWMutex
-	// SSR renderer removed as part of monorepo decoupling — V8/v8go SSR is no longer used
 }
 
 // NewRenderer creates a new Renderer
+// SSR rendering has been removed as part of frontend/backend decoupling — all requests receive the SPA HTML shell
 func NewRenderer() *Renderer {
 	return &Renderer{
 		templates: make(map[string]*template.Template),
@@ -228,8 +228,8 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 		}
 	}
 
-	// SSR rendering removed as part of monorepo decoupling — all requests now serve the SPA HTML shell
 	templateName := "index.html"
+	// Crawler requests now receive the same SPA shell (SSR via V8/v8go has been removed)
 
 	tmpl := tpl.GetTemplate("/views/base.html", "/views/"+templateName)
 	err = tpl.Render(ctx, tmpl, w, Map{
