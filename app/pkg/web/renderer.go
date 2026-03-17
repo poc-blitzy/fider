@@ -14,7 +14,6 @@ import (
 	"github.com/getfider/fider/app/models/query"
 	"github.com/getfider/fider/app/pkg/bus"
 	"github.com/getfider/fider/app/pkg/i18n"
-	"github.com/getfider/fider/app/pkg/log"
 	"github.com/getfider/fider/app/pkg/tpl"
 
 	"github.com/getfider/fider/app/pkg/env"
@@ -48,20 +47,14 @@ type Renderer struct {
 	assets        *clientAssets
 	chunkedAssets map[string]*clientAssets
 	mutex         sync.RWMutex
-	reactRenderer *ReactRenderer
+	// SSR renderer removed as part of monorepo decoupling — V8/v8go SSR is no longer used
 }
 
 // NewRenderer creates a new Renderer
 func NewRenderer() *Renderer {
-	reactRenderer, err := NewReactRenderer("ssr.js")
-	if err != nil {
-		panic(errors.Wrap(err, "failed to initialize SSR renderer"))
-	}
-
 	return &Renderer{
-		templates:     make(map[string]*template.Template),
-		mutex:         sync.RWMutex{},
-		reactRenderer: reactRenderer,
+		templates: make(map[string]*template.Template),
+		mutex:     sync.RWMutex{},
 	}
 }
 
@@ -235,20 +228,8 @@ func (r *Renderer) Render(w io.Writer, statusCode int, props Props, ctx *Context
 		}
 	}
 
+	// SSR rendering removed as part of monorepo decoupling — all requests now serve the SPA HTML shell
 	templateName := "index.html"
-
-	if ctx.Request.IsCrawler() {
-		html, err := r.reactRenderer.Render(ctx.Request.URL, public)
-		if err != nil {
-			log.Errorf(ctx, "Failed to render react page: @{Error}", dto.Props{
-				"Error": err.Error(),
-			})
-		}
-		if html != "" {
-			templateName = "ssr.html"
-			props.Data["html"] = template.HTML(html)
-		}
-	}
 
 	tmpl := tpl.GetTemplate("/views/base.html", "/views/"+templateName)
 	err = tpl.Render(ctx, tmpl, w, Map{

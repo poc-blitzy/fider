@@ -26,8 +26,10 @@ require (
 	golang.org/x/crypto v0.24.0
 	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.15.0
-	rogchap.com/v8go v0.7.1-0.20211222173054-943fcf9e74cc
 )
+
+// NOTE: Run `go mod tidy` after all SSR code removal is complete (e.g., app/pkg/web/react.go deletion)
+// to clean up indirect dependencies that were only required by the removed rogchap.com/v8go dependency.
 
 require (
 	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
