@@ -27,6 +27,12 @@
 
 __Give your customers a voice and let them tell you what they need. Spend less time guessing and more time building the right product.__
 
+## Repository Structure
+
+This repository contains the **Fider Backend API** — a headless Go API server. The frontend SPA is maintained separately in the `fider-frontend` repository.
+
+> **Note:** The decoupled architecture requires two new environment variables — `ALLOWED_ORIGINS` and `FRONTEND_BASE_URL` — to enable cross-origin communication with the frontend SPA. See the [Environment Variables](#environment-variables) section below for details.
+
 # Getting Started
 
 ## ☁️ **Fider Cloud**
@@ -38,6 +44,54 @@ The easiest and quickest way to get started. A fully managed services by the cre
 Install Fider on your own servers, in your own infrastructure. It's totally free, but of course you're responsible for everything. [Learn how](https://docs.fider.io/self-hosted/)
 
 If you do self-host and enjoy Fider, please [let us know where you're using it](https://github.com/getfider/fider/issues/899) - we really appreciate it 🙏
+
+> **Decoupled Deployment:** A complete Fider deployment requires BOTH the backend API (this repository) and the frontend SPA (`fider-frontend` repository). The backend serves JSON API responses, while the frontend provides the user interface. Refer to the `fider-frontend` repository for SPA-specific setup and deployment instructions.
+
+## Environment Variables
+
+In addition to the existing Fider environment variables (see `.example.env`), the decoupled architecture introduces the following:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins for cross-origin requests from the frontend SPA. | `http://localhost:3001` |
+| `FRONTEND_BASE_URL` | Base URL of the frontend SPA. Used for OAuth callback redirects and magic link flows. | `http://localhost:3001` |
+
+## Building & Running
+
+**Build the Go server binary:**
+
+```bash
+make build-server
+```
+
+**Run the server:**
+
+```bash
+make run
+```
+
+**Run database migrations:**
+
+```bash
+make migrate
+```
+
+**Docker build:**
+
+```bash
+docker build -t fider-backend .
+```
+
+> **Local Development:** The `docker-compose.yml` file provides local PostgreSQL, MailHog (SMTP), and MinIO (S3-compatible storage) services for development. Run `docker-compose up -d` to start them.
+
+## Decoupled Architecture
+
+Fider uses a decoupled architecture where the backend API and frontend SPA are independently deployable:
+
+- **JSON API Only:** The backend serves only JSON API responses. It does not serve frontend static assets — those are served independently by the frontend SPA (e.g., via nginx).
+- **CORS Middleware:** A production-grade CORS middleware is registered at the router level, enabling cross-origin requests from the frontend SPA. Allowed origins are configured via the `ALLOWED_ORIGINS` environment variable.
+- **Dual Authentication:** Both cookie-based (same-origin) and `Authorization: Bearer` JWT (cross-origin) authentication are supported. API key authentication via Bearer header is also retained for backward compatibility.
+- **OAuth Redirects:** After OAuth authentication (Google, GitHub, Facebook, or custom providers), callbacks redirect to `FRONTEND_BASE_URL` so the frontend SPA can complete the sign-in flow.
 
 # 💰 Donations and Sponsors
 
