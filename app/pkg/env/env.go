@@ -144,6 +144,10 @@ type config struct {
 	}
 	GoogleAnalytics  string `env:"GOOGLE_ANALYTICS"`
 	SearchNoiseWords string `env:"SEARCH_NOISE_WORDS,default=add|support|for|implement|create|make|allow|enable|provide|some|also|include|very|make|and|for|to|a|able|function|feature|app"`
+	// AllowedOrigins is a comma-separated list of allowed origins for CORS (e.g., "http://localhost:3001,https://app.example.com")
+	AllowedOrigins  string `env:"ALLOWED_ORIGINS"`
+	// FrontendBaseURL is the base URL of the frontend SPA, used for OAuth redirects and magic links
+	FrontendBaseURL string `env:"FRONTEND_BASE_URL"`
 }
 
 // Config is a strongly typed reference to all configuration parsed from Environment Variables
