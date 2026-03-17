@@ -55,6 +55,20 @@ export class FiderImpl {
 
     const el = document.getElementById("server-data")
     const data = el ? JSON.parse(el.textContent || el.innerText) : {}
+
+    // Extract JWT token from OAuth redirect URL for cross-origin authentication.
+    // After OAuth sign-in, the backend redirects to FRONTEND_BASE_URL?token=<jwt>.
+    // The token is stored in localStorage for use as a Bearer token in API requests.
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirectToken = urlParams.get("token")
+    if (redirectToken) {
+      localStorage.setItem("fider_auth_token", redirectToken)
+      // Remove token from URL to prevent exposure in browser history and server logs
+      const cleanURL = new URL(window.location.href)
+      cleanURL.searchParams.delete("token")
+      window.history.replaceState({}, document.title, cleanURL.pathname + cleanURL.search + cleanURL.hash)
+    }
+
     // In standalone SPA mode, provide default settings when server-injected data is unavailable
     if (!data.settings) {
       data.settings = {

@@ -42,10 +42,18 @@ async function toResult<T>(response: Response): Promise<Result<T>> {
   }
 }
 async function request<T>(url: string, method: "GET" | "POST" | "PUT" | "DELETE", body?: any): Promise<Result<T>> {
-  const headers = [
+  const headers: string[][] = [
     ["Accept", "application/json"],
     ["Content-Type", "application/json"],
   ]
+
+  // Attach stored JWT token as Authorization Bearer header for cross-origin authentication.
+  // The token is stored in localStorage by fider.ts after an OAuth redirect from the backend.
+  const authToken = localStorage.getItem("fider_auth_token")
+  if (authToken) {
+    headers.push(["Authorization", `Bearer ${authToken}`])
+  }
+
   try {
     // Prepend configurable API base URL for cross-origin SPA mode
     const response = await fetch(__FIDER_CONFIG__.apiHost + url, {
