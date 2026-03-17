@@ -10,7 +10,7 @@
     <a href="https://feedback.fider.io">Fider Feedback</a> •
     <a href="https://demo.fider.io">Fider Demo</a> •
     <a href="https://docs.fider.io">Docs</a> •
-    <a href="https://github.com/TryGhost/Ghost/blob/main/.github/CONTRIBUTING.md">Contributing</a>
+    <a href="./CONTRIBUTING.md">Contributing</a>
 </p>
 
 <br/>
@@ -88,7 +88,7 @@ docker build -t fider-backend .
 
 Fider uses a decoupled architecture where the backend API and frontend SPA are independently deployable:
 
-- **JSON API Only:** The backend serves only JSON API responses. It does not serve frontend static assets — those are served independently by the frontend SPA (e.g., via nginx).
+- **API and SPA Shell Server:** The backend serves JSON API responses and minimal HTML SPA shells for page routes (via Go templates). It does not serve frontend static assets — those are served independently by the frontend SPA (e.g., via nginx).
 - **CORS Middleware:** A production-grade CORS middleware is registered at the router level, enabling cross-origin requests from the frontend SPA. Allowed origins are configured via the `ALLOWED_ORIGINS` environment variable.
 - **Dual Authentication:** Both cookie-based (same-origin) and `Authorization: Bearer` JWT (cross-origin) authentication are supported. API key authentication via Bearer header is also retained for backward compatibility.
 - **OAuth Redirects:** After OAuth authentication (Google, GitHub, Facebook, or custom providers), callbacks redirect to `FRONTEND_BASE_URL` so the frontend SPA can complete the sign-in flow.

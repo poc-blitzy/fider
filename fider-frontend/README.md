@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://fider.io/" target="_blank">
-    <img src="etc/fiderlogo.png" width="300" alt="Fider">
+    <img src="https://raw.githubusercontent.com/getfider/fider/main/etc/fiderlogo.png" width="300" alt="Fider">
   </a>
 </p>
 
@@ -87,7 +87,7 @@ This SPA communicates with the Fider Backend API via cross-origin HTTP requests.
 
 ```
 public/              — React/TypeScript SPA source
-  pages/             — Route-level page components (29 pages)
+  pages/             — Route-level page components (30 pages)
   components/        — Shared UI components
   services/          — HTTP client, actions, analytics, cache, i18n
   hooks/             — Custom React hooks
